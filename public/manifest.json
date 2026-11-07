@@ -1,0 +1,25 @@
+{
+  "name": "BUTTON Men's Wear",
+  "short_name": "BUTTON",
+  "description": "Premium klassik va zamonaviy erkaklar kiyimlari do'koni",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c1222",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/btn-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/btn-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle"]
+}

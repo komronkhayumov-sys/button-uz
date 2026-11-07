@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BUTTON Men's Wear — Smart Bio-Page & Mini-Catalog
 
-## Getting Started
+Fast, mobile-first Instagram link-in-bio web application and self-service mini-catalog built for **BUTTON Men's Wear (`@button_uz`)** in Tashkent, Uzbekistan.
 
-First, run the development server:
+---
+
+## 🌟 Key Features
+
+1. **Store Bio & Branch Hub:**
+   - Real-time opening status indicator (Tashkent 10:00 – 23:00 live calculation).
+   - Direct 1-tap call buttons for store phones (`+998 94 613 55 55` & `+998 99 613 55 55`).
+   - Interactive showroom Wi-Fi helper (SSID: `BUTTON_GUEST`, Password: `buttonmenswear`).
+   - 4 Tashkent Branch Hub with direct **Yandex Xarita** and **Google Maps** navigation links:
+     - **Chilonzor-16:** 16-mavze, Katta Qa'ni ko'chasi
+     - **Beruniy:** Beruniy metro, Korzinka supermarketi, 2-qavat
+     - **Risoviy:** Mirobod tumani, Farg'ona yo'li, Risoviy bozori hududi
+     - **Shahriston:** Yunusobod tumani, Shahriston metro chorrahasi
+   - Instant language switch (**UZ** - Uzbek default & **RU** - Russian).
+   - High-contrast Dark & Light mode.
+
+2. **Self-Service Owner Admin Panel (`/admin`):**
+   - Protected by simple Owner PIN (`ADMIN_PIN`, default `1234`).
+   - Add, edit, toggle in-stock availability, or delete items.
+   - Set prices in UZS, discount old price, and select clothing/shoe sizes.
+   - Upload product photos directly or paste image URLs.
+   - Live incoming customer orders tracker with status management (`new`, `confirmed`, `delivered`, `cancelled`).
+
+3. **1-Click Customer Order & Branch Reservation Flow:**
+   - Customer picks a product, selects size and quantity.
+   - Chooses **Tashkent Delivery** (2-3 hours) or **Branch Pickup/Reservation** (choose from 4 branches).
+   - Submits in 10 seconds with `+998` phone number.
+   - Automatically sends formatted order alerts to the store owner's Telegram via Bot API, with zero-crash simulated fallback mode if tokens are not yet configured.
+
+4. **24/7 AI Sales & Size Assistant:**
+   - Interactive **Height (cm) & Weight (kg) Size Calculator** recommending exact fits (`S, M, L, XL, XXL, 3XL` and suit sizes `46–56`).
+   - AI Chat answering branch locations, hours, delivery terms, and store policies.
+   - Powered by **Google Gemini API** (`GEMINI_API_KEY`) with intelligent local heuristic NLP fallback.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Installation & Local Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) on your mobile browser or emulator.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Production Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🔐 Environment Variables (`.env`)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Create a `.env` file in the project root:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```env
+# Admin PIN (Default: 1234)
+ADMIN_PIN=1234
 
-## Deploy on Vercel
+# Telegram Bot Order Notifications (Optional)
+TELEGRAM_BOT_TOKEN=7123456789:AA...
+TELEGRAM_CHAT_ID=123456789
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Google Gemini AI Assistant (Optional - smart local engine active by default)
+GEMINI_API_KEY=AIzaSy...
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 📱 Routes Overview
+
+| Route | Description | Access |
+|---|---|---|
+| `/` | Mobile-first storefront bio-page & catalog | Public |
+| `/admin` | Owner CMS dashboard & order tracker | Protected (PIN: `1234`) |
+| `/api/products` | Catalog CRUD API | Public GET / Admin POST, PUT, DELETE |
+| `/api/orders` | Customer checkout & order management | Public POST / Admin GET, PATCH |
+| `/api/upload` | Product image upload handler | Admin PIN |
+| `/api/ai-assistant`| 24/7 AI Stylist & sizing advisor | Public |

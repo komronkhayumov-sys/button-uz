@@ -1,0 +1,554 @@
+[
+  {
+    "id": "btn-001",
+    "name": "Premium Slim-Fit Klassik Kostyum",
+    "nameRu": "Премиальный классический костюм Slim-Fit",
+    "description": "Italiya bichimidagi ikki tugmali zamonaviy kostyum-shim. Nafis va qulay mato, biznes uchrashuvlari va to'ylar uchun ideal.",
+    "descriptionRu": "Современный двухпуговичный костюм-двойка итальянского кроя. Дышащая ткань премиум качества.",
+    "price": 980000,
+    "oldPrice": 1250000,
+    "category": "suits",
+    "image": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["46", "48", "50", "52", "54"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-01T10:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Ko'k", "Kulrang", "Qora"]
+  },
+  {
+    "id": "btn-002",
+    "name": "Qora Urban Bomber Kurtka",
+    "nameRu": "Черный городской бомбер",
+    "description": "Suv o'tkazmaydigan zich material, shamoldan himoyalovchi yoqa va yengil astarli zamonaviy bomber.",
+    "descriptionRu": "Ветрозащитный и водоотталкивающий стильный бомбер с мягкими манжетами. Идеален на каждый день.",
+    "price": 490000,
+    "oldPrice": 580000,
+    "category": "jackets",
+    "image": "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["M", "L", "XL", "XXL"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Yangi",
+    "createdAt": "2026-11-02T11:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora", "Xaki", "To'q yashil"]
+  },
+  {
+    "id": "btn-003",
+    "name": "Oversize Streetwear Xudi (Grafite)",
+    "nameRu": "Худи Оверсайз Streetwear (Графит)",
+    "description": "100% paxta, 3 ipli zich futer mato. Cho'ntakli, keng kapyushon va zamonaviy tushirilgan yelka bichimi.",
+    "descriptionRu": "Плотный премиальный хлопок (3-х нитка с начесом). Стильный свободный крой и удобный капюшон.",
+    "price": 320000,
+    "category": "hoodies",
+    "image": "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["S", "M", "L", "XL", "XXL"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Xit",
+    "createdAt": "2026-11-02T12:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Grafit", "Qora", "Och kulrang"]
+  },
+  {
+    "id": "btn-004",
+    "name": "Klassik Kashmir Palto (Camel)",
+    "nameRu": "Классическое пальто из кашемира (Camel)",
+    "description": "Kashmir aralashmali matodan tikilgan uzun va issiq erkaklar paltosi. Nafis bichim, qishki va kuzgi mavsum uchun ajoyib tanlov.",
+    "descriptionRu": "Элегантное мужское пальто из кашемировой шерсти. Подчеркивает статус и надежно согревает.",
+    "price": 1350000,
+    "oldPrice": 1600000,
+    "category": "jackets",
+    "image": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["48", "50", "52", "54"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Chegirma",
+    "createdAt": "2026-11-03T09:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Tuya yungi (Camel)", "Qora", "To'q kulrang"]
+  },
+  {
+    "id": "btn-005",
+    "name": "Premium Pique Paxta Polo Futbolka",
+    "nameRu": "Поло из премиального хлопка Pique",
+    "description": "Klassik yoqali, marvarid tugmali nafas oluvchi yuqori sifatli erkaklar polosi. Djinsi va klassik shimlar bilan a'lo mos tushadi.",
+    "descriptionRu": "Дышащее поло из хлопка пике. Сохраняет форму после стирки, идеально для теплой погоды.",
+    "price": 210000,
+    "category": "polos",
+    "image": "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["M", "L", "XL", "XXL"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Yangi",
+    "createdAt": "2026-11-03T10:30:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Zaytun", "Oq", "Qora", "To'q ko'k"]
+  },
+  {
+    "id": "btn-006",
+    "name": "Chino Kundalik Qulay Shim (Bej)",
+    "nameRu": "Повседневные брюки Chino (Бежевые)",
+    "description": "Elastan qo'shilgan qulay paxta matosi. Harakatlanishga to'sqinlik qilmaydi, zamonaviy to'g'ri bichim.",
+    "descriptionRu": "Брюки чинос из мягкого хлопка со стрейчем. Идеальная посадка на каждый день.",
+    "price": 290000,
+    "category": "pants",
+    "image": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["30", "31", "32", "33", "34", "36"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "createdAt": "2026-11-03T14:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Bej", "To'q ko'k", "Qora"]
+  },
+  {
+    "id": "btn-007",
+    "name": "Tabiiy Charm Oksford Poyabzali",
+    "nameRu": "Классические туфли Оксфорды из кожи",
+    "description": "100% tabiiy sifatli buzoq terisi. Qulay taglik, uzoq vaqt kiyganda ham oyoqni charchatmaydi.",
+    "descriptionRu": "Мужские оксфорды ручной работы из натуральной телячьей кожи. Высокий комфорт и презентабельность.",
+    "price": 640000,
+    "oldPrice": 750000,
+    "category": "shoes",
+    "image": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["39", "40", "41", "42", "43", "44"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-04T08:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Jigarrang", "Qora"]
+  },
+  {
+    "id": "btn-008",
+    "name": "Premium Charm Erkaklar Kamari",
+    "nameRu": "Премиальный кожаный мужской ремень",
+    "description": "Klassik qoramtir mat po'lat to'qali, yuqori sifatli qalin tabiiy charmdan ishlangan erkaklar kamari.",
+    "descriptionRu": "Натуральная плотная кожа с матовой пряжкой. Подходит под любые брюки и костюмы.",
+    "price": 150000,
+    "category": "accessories",
+    "image": "https://images.unsplash.com/photo-1624222247344-550fb60583dc?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["110cm", "115cm", "120cm", "125cm"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Yangi",
+    "createdAt": "2026-11-04T12:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1624222247344-550fb60583dc?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Jigarrang", "Qora"]
+  },
+  {
+    "id": "btn-009",
+    "name": "Ikki Qatorli To'q Ko'k Kostyum",
+    "nameRu": "Двубортный темно-синий костюм",
+    "description": "Olijanob italyan uslubidagi 6 tugmali ikki qatorli kostyum. Keng laqabli yoqa, qad-qomatni mukammal ko'rsatadi.",
+    "descriptionRu": "Двубортный костюм итальянского кроя с пикообразными лацканами. Премиум шерсть.",
+    "price": 1150000,
+    "oldPrice": 1400000,
+    "category": "suits",
+    "image": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["48", "50", "52", "54"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-04T14:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["To'q ko'k", "Qora"]
+  },
+  {
+    "id": "btn-010",
+    "name": "Smolking Qora Tantanalar Kostyumi",
+    "nameRu": "Черный праздничный смокинг",
+    "description": "Atlas yoqali tantanali smolking va maxsus burchakli shim. To'y, marosim va rasmiy kechalar uchun eng nufuzli tanlov.",
+    "descriptionRu": "Элегантный смокинг с шелковыми лацканами. Идеален для свадеб и торжественных мероприятий.",
+    "price": 1450000,
+    "oldPrice": 1800000,
+    "category": "suits",
+    "image": "https://images.unsplash.com/photo-1555069519-127aadedf1ee?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["48", "50", "52", "54", "56"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-04T16:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1555069519-127aadedf1ee?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora"]
+  },
+  {
+    "id": "btn-011",
+    "name": "Katakli Kulrang Smart-Casual Kostyum",
+    "nameRu": "Серый клетчатый костюм Smart-Casual",
+    "description": "Nafis yupqa chiziqli katak naqshli zamonaviy kostyum. Kundalik ofis va uchrashuvlar uchun qulay va erkin.",
+    "descriptionRu": "Современный костюм в тонкую клетку. Превосходный баланс строгости и комфорта.",
+    "price": 920000,
+    "oldPrice": 1100000,
+    "category": "suits",
+    "image": "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["46", "48", "50", "52"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Yangi",
+    "createdAt": "2026-11-05T09:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Kulrang", "Antratsit"]
+  },
+  {
+    "id": "btn-012",
+    "name": "Biker Tabiiy Charm Kurtka",
+    "nameRu": "Кожаная куртка Biker из натуральной кожи",
+    "description": "Haqiqiy qo'y terisidan tikilgan metall zamokli klassik biker kurtkasi. Mustahkam va uzoq yillik xizmat qiladi.",
+    "descriptionRu": "Куртка-косуха из натуральной кожи с качественной металлической фурнитурой.",
+    "price": 890000,
+    "oldPrice": 1050000,
+    "category": "jackets",
+    "image": "https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["M", "L", "XL", "XXL"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-05T10:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora", "To'q jigarrang"]
+  },
+  {
+    "id": "btn-013",
+    "name": "Issiq Qishki Parka Kurtka (Termo)",
+    "nameRu": "Теплая зимняя парка (Термо)",
+    "description": "Sovuq haroratga mo'ljallangan qalin termo astarli suv o'tkazmas parka. Keng yenglar va shamol to'suvchi yoqa.",
+    "descriptionRu": "Ветро- и водонепроницаемая зимняя парка с термоизоляцией до -25°C.",
+    "price": 780000,
+    "oldPrice": 920000,
+    "category": "jackets",
+    "image": "https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["M", "L", "XL", "XXL", "3XL"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Chegirma",
+    "createdAt": "2026-11-05T11:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora", "Zaytun", "To'q ko'k"]
+  },
+  {
+    "id": "btn-014",
+    "name": "100% Merinos Yungi Vodolazka (Qora)",
+    "nameRu": "Водолазка из 100% шерсти мериноса (Черная)",
+    "description": "Eng nozik merinos yungidan to'qilgan elastik baland yoqali vodolazka. Kostyum va kurtkalar tagidan juda nozik turadi.",
+    "descriptionRu": "Мягкая дышащая водолазка из мериносовой шерсти. Идеальна под пиджак.",
+    "price": 360000,
+    "oldPrice": 420000,
+    "category": "hoodies",
+    "image": "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["S", "M", "L", "XL", "XXL"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-05T12:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora", "To'q kulrang", "Sutrang"]
+  },
+  {
+    "id": "btn-015",
+    "name": "V-Yoqali Kashmir Kardigan (Kulrang)",
+    "nameRu": "Кашемировый кардиган с V-образным вырезом",
+    "description": "Tugmali yumshoq kashmir kardigan. Ko'ylak ustidan kiyish uchun qulay va klassik qiyofa beradi.",
+    "descriptionRu": "Премиальный кардиган на пуговицах из смеси кашемира и хлопка.",
+    "price": 420000,
+    "category": "hoodies",
+    "image": "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["M", "L", "XL", "XXL"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Yangi",
+    "createdAt": "2026-11-05T13:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Kulrang", "To'q ko'k", "Bej"]
+  },
+  {
+    "id": "btn-016",
+    "name": "Oq Premium Oxford Biznes Ko'ylak",
+    "nameRu": "Белая премиальная рубашка Oxford",
+    "description": "G'ijimlanmaydigan (Non-Iron) zich paxta matosidan tikilgan klassik oq erkaklar ko'ylagi. Mustahkam yoqa va tugmalar.",
+    "descriptionRu": "Классическая белая сорочка из оксфордского хлопка с технологией Non-Iron.",
+    "price": 250000,
+    "oldPrice": 310000,
+    "category": "polos",
+    "image": "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["39", "40", "41", "42", "43", "44"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-05T14:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Oq", "Och havorang"]
+  },
+  {
+    "id": "btn-017",
+    "name": "Qora Atlas Tantanalar Ko'ylagi",
+    "nameRu": "Черная атласная рубашка для торжеств",
+    "description": "Yengil ipaksimon jiloli qora ko'ylak. Kostyumlar va smolking ostidan juda hashamatli va zamonaviy ko'rinadi.",
+    "descriptionRu": "Шелковистая вечерняя черная рубашка. Эффектный образ для праздничных мероприятий.",
+    "price": 270000,
+    "category": "polos",
+    "image": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["S", "M", "L", "XL", "XXL"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Yangi",
+    "createdAt": "2026-11-05T15:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora", "Zumrad"]
+  },
+  {
+    "id": "btn-018",
+    "name": "Trikotaj Zipperli Zamonaviy Polo",
+    "nameRu": "Трикотажное поло на молнии",
+    "description": "Metall fermuarli (zipper) nozik to'qilgan erkaklar polosi. Qad-qomatga yopishib turuvchi zamonaviy smart bichim.",
+    "descriptionRu": "Стильное трикотажное поло с металлической молнией. Мягкая дышащая фактура.",
+    "price": 230000,
+    "category": "polos",
+    "image": "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["M", "L", "XL", "XXL"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "createdAt": "2026-11-05T16:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Grafit", "Qora", "Bej"]
+  },
+  {
+    "id": "btn-019",
+    "name": "To'q Kulrang Klassik Jun Shim",
+    "nameRu": "Темно-серые классические шерстяные брюки",
+    "description": "Italiya bichimidagi dazmollangan qatlamli (strelkali) klassik shim. Kostyumlar va ko'ylaklar bilan to'liq mos keladi.",
+    "descriptionRu": "Классические шерстяные брюки со стрелками. Идеальная посадка по фигуре.",
+    "price": 350000,
+    "oldPrice": 420000,
+    "category": "pants",
+    "image": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["30", "31", "32", "33", "34", "36"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-05T17:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["To'q kulrang", "Qora", "To'q ko'k"]
+  },
+  {
+    "id": "btn-020",
+    "name": "Zamonaviy Slim-Fit Kargo Shim",
+    "nameRu": "Городские зауженные брюки карго",
+    "description": "Yon cho'ntakli mustahkam ripstop paxta kargo shimi. Kundalik faol harakat va sayrlar uchun juda qulay.",
+    "descriptionRu": "Стильные брюки карго с функциональными карманами из прочного хлопка.",
+    "price": 310000,
+    "category": "pants",
+    "image": "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["30", "32", "34", "36"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Yangi",
+    "createdAt": "2026-11-06T09:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora", "Xaki", "Kulrang"]
+  },
+  {
+    "id": "btn-021",
+    "name": "Tabiiy Charm Derbi Tuflilar (Qora)",
+    "nameRu": "Черные кожаные туфли Дерби",
+    "description": "Ochiq bog'ichli tabiiy charmdan qulay derbi poyabzali. Oyoq ko'tarilishiga moslashuvchan qulay qolip.",
+    "descriptionRu": "Туфли дерби из натуральной мягкой кожи. Универсальная модель под любой гардероб.",
+    "price": 690000,
+    "oldPrice": 820000,
+    "category": "shoes",
+    "image": "https://images.unsplash.com/photo-1533867617858-e7b97e060509?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["40", "41", "42", "43", "44"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-06T10:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1533867617858-e7b97e060509?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora"]
+  },
+  {
+    "id": "btn-022",
+    "name": "Zamsh Chelsi Botinkalar (Jigarrang)",
+    "nameRu": "Замшевые ботинки Челси (Коричневые)",
+    "description": "Italiya tabiiy zamshidan ishlangan rezinali qulay chelsi botinkasi. Kuz-qish mavsumi uchun uslubiy va qulay.",
+    "descriptionRu": "Мужские челси из премиальной замши на гибкой подошве. Удобно надевать и носить.",
+    "price": 720000,
+    "oldPrice": 850000,
+    "category": "shoes",
+    "image": "https://images.unsplash.com/photo-1638247025967-b4e38f787b76?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["40", "41", "42", "43", "44"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Yangi",
+    "createdAt": "2026-11-06T11:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1638247025967-b4e38f787b76?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Jigarrang", "Qora"]
+  },
+  {
+    "id": "btn-023",
+    "name": "Minimalist Oq Smart Krossovkalar",
+    "nameRu": "Белые минималистичные кожаные кеды",
+    "description": "Tabiiy charm oq krossovka. Kostyum, chino va kargo shimlar bilan kiyiladigan zamonaviy smart-casual model.",
+    "descriptionRu": "Минималистичные белые кеды из натуральной кожи. Главный тренд современного гардероба.",
+    "price": 480000,
+    "category": "shoes",
+    "image": "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["39", "40", "41", "42", "43", "44"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Xit",
+    "createdAt": "2026-11-06T12:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Oq"]
+  },
+  {
+    "id": "btn-024",
+    "name": "Klassik Charm Penny Loaferlar",
+    "nameRu": "Кожаные лоферы Penny",
+    "description": "Nafis tabiiy charm loafer. Yengil va nafas oluvchi, to'ylar va yozgi tantanalar uchun eng nafis oyoq kiyimi.",
+    "descriptionRu": "Классические лоферы пенни из мягкой кожи с эргономичной колодкой.",
+    "price": 650000,
+    "category": "shoes",
+    "image": "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["40", "41", "42", "43", "44"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Yangi",
+    "createdAt": "2026-11-06T13:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["To'q jigarrang", "Qora"]
+  },
+  {
+    "id": "btn-025",
+    "name": "Ipak Galstuk va Ro'molcha To'plami",
+    "nameRu": "Шелковый галстук и платок в карман",
+    "description": "100% tabiiy ipakdan to'qilgan nafis naqshli galstuk va cho'ntak ro'molchasi. Sovg'abop qutida.",
+    "descriptionRu": "Подарочный набор: шелковый галстук с нагрудным платком в фирменной коробке.",
+    "price": 180000,
+    "category": "accessories",
+    "image": "https://images.unsplash.com/photo-1589756823695-278bc923f962?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["Universal"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "badge": "Xit",
+    "createdAt": "2026-11-06T14:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1589756823695-278bc923f962?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["To'q qizil (Bordo)", "To'q ko'k", "Zumrad"]
+  },
+  {
+    "id": "btn-026",
+    "name": "Tabiiy Charm Biznes Portfel (Qora)",
+    "nameRu": "Кожаный деловой портфель для документов и ноутбука",
+    "description": "Hujjatlar va 15.6 dyuymli noutbuk uchun bo'linmali qalin tabiiy charm portfel. Mustahkam qulf va yelkaga tasma.",
+    "descriptionRu": "Вместительный деловой портфель из плотной кожи с отделением для ноутбука.",
+    "price": 850000,
+    "oldPrice": 1050000,
+    "category": "accessories",
+    "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["Universal"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-06T15:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora", "To'q jigarrang"]
+  },
+  {
+    "id": "btn-027",
+    "name": "Mat Xrom Manjetlar va Galstuk Qisqichi",
+    "nameRu": "Набор запонок и зажим для галстука",
+    "description": "Zanglamas po'latdan ishlangan nafis geometrik manjet tugmalari va galstuk qisqichi to'plami.",
+    "descriptionRu": "Комплект запонок и зажима для галстука из ювелирной стали.",
+    "price": 120000,
+    "category": "accessories",
+    "image": "https://images.unsplash.com/photo-1589756823695-278bc923f962?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["Universal"],
+    "isAvailable": true,
+    "isFeatured": false,
+    "createdAt": "2026-11-06T16:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1589756823695-278bc923f962?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Kumush", "Qora grafit"]
+  },
+  {
+    "id": "btn-028",
+    "name": "Klassik Xrono Erkaklar Qo'l Soati",
+    "nameRu": "Классические мужские часы с хронографом",
+    "description": "Yapon kvars mexanizmi, qora charm tasma va sapfir shisha. 50 metr suvga chidamli premium korpus.",
+    "descriptionRu": "Элегантные мужские часы с сапфировым стеклом и кожаным ремешком.",
+    "price": 590000,
+    "oldPrice": 750000,
+    "category": "accessories",
+    "image": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80",
+    "sizes": ["Universal"],
+    "isAvailable": true,
+    "isFeatured": true,
+    "badge": "Xit",
+    "createdAt": "2026-11-06T17:00:00Z",
+    "images": [
+      "https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80"
+    ],
+    "colors": ["Qora", "Oltin/Jigarrang"]
+  }
+]
