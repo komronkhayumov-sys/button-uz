@@ -19,6 +19,7 @@ import {
   Check,
   ExternalLink,
   ShieldCheck,
+  Copy,
   Sun,
   Moon,
   Sparkles,
@@ -59,6 +60,7 @@ export default function CartPage() {
 
   // Payment card tabs & copy
   const [activeCardTab, setActiveCardTab] = useState<"card1" | "card2">("card1");
+  const [copiedCard, setCopiedCard] = useState(false);
 
   // Load theme, cart, language, settings, and customer from localStorage / API
   useEffect(() => {
@@ -177,14 +179,45 @@ export default function CartPage() {
 
   // Payment Cards configuration
   const card1Number = settings?.cardNumber || "8600 1234 5678 9999";
-  const card2Number = settings?.card2Number || "9860 1201 3344 7788";
-  const card2Enabled = settings?.card2Enabled ?? false;
-  const rawCard1 = card1Number.replace(/\s+/g, "");
-  const rawCard2 = card2Number.replace(/\s+/g, "");
+  const card1Holder = settings?.cardHolder || "BUTTON MEN WEAR LLC";
+  const card1Bank = settings?.cardBank || "Kapitalbank (Uzcard)";
 
-  const targetCardRaw = activeCardTab === "card2" && card2Enabled ? rawCard2 : rawCard1;
+  const card2Number = settings?.card2Number || "9860 1201 3344 7788";
+  const card2Holder = settings?.card2Holder || settings?.cardHolder || "BUTTON MEN WEAR LLC";
+  const card2Bank = settings?.card2Bank || "TBC Bank (Humo)";
+  const card2Enabled = Boolean(settings?.card2Enabled && settings?.card2Number);
+
+  const activeCardNumber = activeCardTab === "card2" && card2Enabled ? card2Number : card1Number;
+  const activeCardHolder = activeCardTab === "card2" && card2Enabled ? card2Holder : card1Holder;
+  const activeCardBank = activeCardTab === "card2" && card2Enabled ? card2Bank : card1Bank;
+  const targetCardRaw = activeCardNumber.replace(/\s+/g, "");
+
   const clickUrl = `https://my.click.uz/clickp2p/${targetCardRaw}?amount=${totalPrice}`;
   const paymeUrl = `https://payme.uz/fallback/pay/?card=${targetCardRaw}&amount=${totalPrice * 100}`;
+  const uzumUrl = `https://uzumbank.uz`;
+
+  const handleCopyCard = (customNum?: string) => {
+    const toCopy = (customNum || targetCardRaw).replace(/\s+/g, "");
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(toCopy);
+    }
+    setCopiedCard(true);
+    setTimeout(() => setCopiedCard(false), 2500);
+  };
+
+  const handleSelectPaymentMethod = (method: PaymentMethod) => {
+    setPaymentMethod(method);
+    if (method === "click") {
+      handleCopyCard();
+      window.open(clickUrl, "_blank");
+    } else if (method === "payme") {
+      handleCopyCard();
+      window.open(paymeUrl, "_blank");
+    } else if (method === "uzum") {
+      handleCopyCard();
+      window.open(uzumUrl, "_blank");
+    }
+  };
 
   // Submit Order to backend
   const handleSubmitOrder = async (e: React.FormEvent) => {
@@ -412,31 +445,92 @@ export default function CartPage() {
             </div>
 
             {/* Payment Deep Links if online */}
-            {(orderSuccess.paymentMethod === "click" || orderSuccess.paymentMethod === "payme") && (
-              <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 max-w-md mx-auto space-y-3 text-left">
-                <p className="text-xs font-bold text-[#0F172A] dark:text-white">
-                  {isRu ? "Оплата через карту/приложение:" : "To'lovni amalga oshirish:"}
-                </p>
-                <div className="flex gap-2">
+            {orderSuccess.paymentMethod !== "cash" && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] text-white border border-slate-700/80 max-w-md mx-auto space-y-3.5 text-left shadow-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300">
+                    {activeCardBank || "Karta orqali to'lov"}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>{isRu ? "Безопасный платеж" : "Xavfsiz to'lov"}</span>
+                  </div>
+                </div>
+
+                {/* Card details box */}
+                <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/10">
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-widest block font-bold mb-0.5">
+                      {isRu ? "Номер карты получателя:" : "Karta raqami:"}
+                    </span>
+                    <span className="font-mono text-base font-black tracking-wider text-white">
+                      {activeCardNumber}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCard()}
+                    className="px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-violet-600/30"
+                  >
+                    {copiedCard ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-300 stroke-[3]" />
+                        <span className="text-emerald-300 font-bold">{isRu ? "Скопировано!" : "Nusxalandi!"}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>{isRu ? "Nusxalash" : "Nusxa olish"}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex justify-between items-center text-xs text-slate-300">
+                  <span>{isRu ? "Владелец:" : "Karta egasi:"} <b className="text-white font-bold">{activeCardHolder}</b></span>
+                  <span className="font-mono font-bold text-violet-400">
+                    {formatUzbekCurrency(orderSuccess.totalAmount || totalPrice)}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-1">
                   <a
-                    href={clickUrl}
+                    href={`https://my.click.uz/clickp2p/${targetCardRaw}?amount=${orderSuccess.totalAmount || totalPrice}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 py-2.5 rounded-xl bg-[#0089D0] text-white font-bold text-xs text-center flex items-center justify-center gap-1.5 hover:brightness-110 shadow-sm"
+                    onClick={() => handleCopyCard()}
+                    className="py-2.5 rounded-xl bg-[#0089D0] hover:brightness-110 text-white font-bold text-xs text-center flex items-center justify-center gap-1 shadow-sm transition-all"
                   >
                     <span>Click</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="w-3 h-3" />
                   </a>
                   <a
-                    href={paymeUrl}
+                    href={`https://payme.uz/fallback/pay/?card=${targetCardRaw}&amount=${(orderSuccess.totalAmount || totalPrice) * 100}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 py-2.5 rounded-xl bg-[#00CCCC] text-zinc-950 font-bold text-xs text-center flex items-center justify-center gap-1.5 hover:brightness-110 shadow-sm"
+                    onClick={() => handleCopyCard()}
+                    className="py-2.5 rounded-xl bg-[#00CCCC] hover:brightness-110 text-slate-950 font-bold text-xs text-center flex items-center justify-center gap-1 shadow-sm transition-all"
                   >
                     <span>Payme</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
+                    href="https://uzumbank.uz"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => handleCopyCard()}
+                    className="py-2.5 rounded-xl bg-[#7000FF] hover:brightness-110 text-white font-bold text-xs text-center flex items-center justify-center gap-1 shadow-sm transition-all"
+                  >
+                    <span>Uzum</span>
+                    <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
+
+                <p className="text-[11px] text-slate-400 text-center">
+                  {isRu
+                    ? "💡 Оплатите через приложение выше и прикрепите фото чека ниже:"
+                    : "💡 Yuqoridagi ilovalar orqali to'lov qilib, chek skrinshotini quyida biriktiring:"}
+                </p>
               </div>
             )}
 
@@ -747,37 +841,185 @@ export default function CartPage() {
               </div>
 
               {/* Payment Method Card */}
-              <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 space-y-3 shadow-sm dark:shadow-xl">
-                <h3 className="font-bold text-sm text-[#0F172A] dark:text-white flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-                  <span>{isRu ? "Способ оплаты" : "To'lov turi"}</span>
+              <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 space-y-3.5 shadow-sm dark:shadow-xl">
+                <h3 className="font-bold text-sm text-[#0F172A] dark:text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                    <span>{isRu ? "Способ оплаты" : "To'lov turi"}</span>
+                  </div>
+                  <span className="text-[11px] text-violet-600 dark:text-violet-400 font-bold">
+                    {paymentMethod === "click"
+                      ? "Click"
+                      : paymentMethod === "payme"
+                      ? "Payme"
+                      : paymentMethod === "uzum"
+                      ? "Uzum Bank"
+                      : isRu
+                      ? "Наличные"
+                      : "Naqd"}
+                  </span>
                 </h3>
 
                 <div className="grid grid-cols-2 gap-2 text-xs font-bold">
                   {[
-                    { id: "click", label: "Click", sub: "1-bosqichli to'lov" },
-                    { id: "payme", label: "Payme", sub: "Ilova orqali" },
-                    { id: "uzum", label: "Uzum Bank", sub: "Karta o'tkazma" },
-                    { id: "cash", label: isRu ? "Наличные / Терминал" : "Naqd / Terminal", sub: isRu ? "При получении" : "Qabul qilinganda" },
+                    { id: "click", label: "Click", sub: isRu ? "Через Click" : "Ilovada 1-bosishda to'lov", badgeColor: "bg-[#0089D0] text-white" },
+                    { id: "payme", label: "Payme", sub: isRu ? "Через Payme" : "Ilovada to'lash", badgeColor: "bg-[#00CCCC] text-slate-950" },
+                    { id: "uzum", label: "Uzum Bank", sub: isRu ? "Перевод Uzum" : "Karta o'tkazma", badgeColor: "bg-[#7000FF] text-white" },
+                    { id: "cash", label: isRu ? "Наличные / Терминал" : "Naqd / Terminal", sub: isRu ? "При получении" : "Qabul qilinganda", badgeColor: "bg-emerald-600 text-white" },
                   ].map((pm) => {
                     const isChosen = paymentMethod === pm.id;
                     return (
                       <button
                         key={pm.id}
                         type="button"
-                        onClick={() => setPaymentMethod(pm.id as PaymentMethod)}
-                        className={`p-2.5 rounded-xl border transition-all text-left cursor-pointer ${
+                        onClick={() => handleSelectPaymentMethod(pm.id as PaymentMethod)}
+                        className={`p-3 rounded-2xl border transition-all text-left cursor-pointer relative overflow-hidden ${
                           isChosen
-                            ? "bg-[#2563EB]/10 border-[#2563EB] text-[#0F172A] dark:text-white shadow-xs"
-                            : "bg-[#F8FAFC] dark:bg-[#1e293b] border-[#E2E8F0] dark:border-slate-700 text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white"
+                            ? "border-violet-600 bg-violet-50/60 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 shadow-sm ring-1 ring-violet-500/30"
+                            : "border-[#E2E8F0] dark:border-slate-800 bg-[#F8FAFC] dark:bg-[#1e293b]/50 text-[#64748B] dark:text-slate-400 hover:border-violet-300"
                         }`}
                       >
-                        <p className="text-xs font-bold text-[#0F172A] dark:text-white">{pm.label}</p>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-bold text-[#0F172A] dark:text-white">{pm.label}</p>
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${pm.badgeColor}`}>
+                            {pm.id.toUpperCase()}
+                          </span>
+                        </div>
                         <p className="text-[10px] text-[#64748B] dark:text-slate-400 font-normal">{pm.sub}</p>
                       </button>
                     );
                   })}
                 </div>
+
+                {/* Online Payment Card & App Launcher (Shown when Click, Payme, or Uzum is selected) */}
+                {paymentMethod !== "cash" && (
+                  <div className="mt-3 p-4 rounded-2xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] text-white border border-slate-700/80 shadow-lg space-y-3.5">
+                    {/* Header: Bank & Card Tabs */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-xs font-bold text-slate-300">
+                          {activeCardBank || "Karta orqali to'lov"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{isRu ? "Безопасный перевод" : "Xavfsiz to'lov"}</span>
+                      </div>
+                    </div>
+
+                    {/* Switch between Card 1 and Card 2 if both configured */}
+                    {card2Enabled && (
+                      <div className="flex gap-2 p-1 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setActiveCardTab("card1")}
+                          className={`flex-1 py-1 px-2 rounded-lg font-bold transition-all text-center ${
+                            activeCardTab === "card1"
+                              ? "bg-violet-600 text-white shadow-sm"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          1-karta ({card1Bank || "Uzcard"})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveCardTab("card2")}
+                          className={`flex-1 py-1 px-2 rounded-lg font-bold transition-all text-center ${
+                            activeCardTab === "card2"
+                              ? "bg-violet-600 text-white shadow-sm"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          2-karta ({card2Bank || "Humo"})
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Card Number & Copy Button */}
+                    <div className="flex items-center justify-between bg-black/40 backdrop-blur-sm p-3 rounded-xl border border-white/10">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase tracking-widest block font-bold mb-0.5">
+                          {isRu ? "Номер карты получателя:" : "Karta raqami (Admin):"}
+                        </span>
+                        <span className="font-mono text-base sm:text-lg font-black tracking-wider text-white">
+                          {activeCardNumber}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCard()}
+                        className="px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-violet-600/30"
+                      >
+                        {copiedCard ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-300 stroke-[3]" />
+                            <span className="text-emerald-300 font-bold">{isRu ? "Скопировано!" : "Nusxalandi!"}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>{isRu ? "Nusxalash" : "Nusxa olish"}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Card Holder & Total Amount */}
+                    <div className="flex justify-between items-center text-xs text-slate-300 pt-0.5 border-t border-slate-700/60">
+                      <span>{isRu ? "Владелец:" : "Karta egasi:"} <b className="text-white font-bold">{activeCardHolder}</b></span>
+                      <span className="font-mono font-bold text-violet-400">{formatUzbekCurrency(totalPrice)}</span>
+                    </div>
+
+                    {/* Direct App Launch Button */}
+                    <div className="pt-1">
+                      {paymentMethod === "click" && (
+                        <a
+                          href={clickUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => handleCopyCard()}
+                          className="w-full py-3 px-4 rounded-xl bg-[#0089D0] hover:bg-[#0077b5] text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all active:scale-[0.98]"
+                        >
+                          <span>{isRu ? `Открыть Click (${formatUzbekCurrency(totalPrice)})` : `Click ilovasida to'lash (${formatUzbekCurrency(totalPrice)})`}</span>
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+
+                      {paymentMethod === "payme" && (
+                        <a
+                          href={paymeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => handleCopyCard()}
+                          className="w-full py-3 px-4 rounded-xl bg-[#00CCCC] hover:bg-[#00b8b8] text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition-all active:scale-[0.98]"
+                        >
+                          <span>{isRu ? `Открыть Payme (${formatUzbekCurrency(totalPrice)})` : `Payme ilovasida to'lash (${formatUzbekCurrency(totalPrice)})`}</span>
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+
+                      {paymentMethod === "uzum" && (
+                        <a
+                          href={uzumUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => handleCopyCard()}
+                          className="w-full py-3 px-4 rounded-xl bg-[#7000FF] hover:bg-[#5e00d9] text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 transition-all active:scale-[0.98]"
+                        >
+                          <span>{isRu ? `Открыть Uzum Bank (${formatUzbekCurrency(totalPrice)})` : `Uzum Bank ilovasida to'lash (${formatUzbekCurrency(totalPrice)})`}</span>
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+
+                      <p className="text-[11px] text-slate-400 text-center mt-2">
+                        {isRu
+                          ? "💡 Нажмите на кнопку, чтобы перейти в приложение с введенной картой и суммой, или скопируйте номер карты."
+                          : "💡 Tugmani bosganda ilova kiritilgan karta va summa bilan ochiladi yoki karta raqamidan nusxa olib to'lang."}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Final Summary Card & Submit Button */}
