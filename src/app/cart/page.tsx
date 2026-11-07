@@ -458,39 +458,37 @@ export default function CartPage() {
                 </div>
 
                 {/* Card details box */}
-                <div className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/10">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-widest block font-bold mb-0.5">
+                <div className="bg-black/40 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
                       {isRu ? "Номер карты получателя:" : "Karta raqami:"}
                     </span>
-                    <span className="font-mono text-base font-black tracking-wider text-white">
-                      {activeCardNumber}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCard()}
+                      className="px-3 py-1 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-violet-600/30"
+                    >
+                      {copiedCard ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-300 stroke-[3]" />
+                          <span className="text-emerald-300 font-bold">{isRu ? "Скопировано!" : "Nusxalandi!"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>{isRu ? "Nusxalash" : "Nusxa olish"}</span>
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopyCard()}
-                    className="px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-violet-600/30"
-                  >
-                    {copiedCard ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-300 stroke-[3]" />
-                        <span className="text-emerald-300 font-bold">{isRu ? "Скопировано!" : "Nusxalandi!"}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>{isRu ? "Nusxalash" : "Nusxa olish"}</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="font-mono text-lg sm:text-xl font-black tracking-widest text-white whitespace-nowrap select-all">
+                    {activeCardNumber}
+                  </div>
                 </div>
 
-                <div className="flex justify-between items-center text-xs text-slate-300">
+                <div className="flex justify-between items-center text-xs text-slate-300 pt-0.5 border-t border-slate-700/60">
                   <span>{isRu ? "Владелец:" : "Karta egasi:"} <b className="text-white font-bold">{activeCardHolder}</b></span>
-                  <span className="font-mono font-bold text-violet-400">
-                    {formatUzbekCurrency(orderSuccess.totalAmount || totalPrice)}
-                  </span>
+                  <span className="font-mono text-[11px] text-slate-400 uppercase">{activeCardBank || "Uzcard / Humo"}</span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 pt-1">
@@ -909,66 +907,67 @@ export default function CartPage() {
                     </div>
 
                     {/* Switch between Card 1 and Card 2 if both configured */}
+                    {/* Switch between Card 1 and Card 2 if both configured */}
                     {card2Enabled && (
-                      <div className="flex gap-2 p-1 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
+                      <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
                         <button
                           type="button"
                           onClick={() => setActiveCardTab("card1")}
-                          className={`flex-1 py-1 px-2 rounded-lg font-bold transition-all text-center ${
+                          className={`py-1.5 px-2 rounded-lg font-bold transition-all text-center text-xs truncate ${
                             activeCardTab === "card1"
                               ? "bg-violet-600 text-white shadow-sm"
                               : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          1-karta ({card1Bank || "Uzcard"})
+                          1-karta (Uzcard)
                         </button>
                         <button
                           type="button"
                           onClick={() => setActiveCardTab("card2")}
-                          className={`flex-1 py-1 px-2 rounded-lg font-bold transition-all text-center ${
+                          className={`py-1.5 px-2 rounded-lg font-bold transition-all text-center text-xs truncate ${
                             activeCardTab === "card2"
                               ? "bg-violet-600 text-white shadow-sm"
                               : "text-slate-400 hover:text-white"
                           }`}
                         >
-                          2-karta ({card2Bank || "Humo"})
+                          2-karta (Humo)
                         </button>
                       </div>
                     )}
 
-                    {/* Card Number & Copy Button */}
-                    <div className="flex items-center justify-between bg-black/40 backdrop-blur-sm p-3 rounded-xl border border-white/10">
-                      <div>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-widest block font-bold mb-0.5">
+                    {/* Card Number & Copy Button (Full-width no-wrap layout) */}
+                    <div className="bg-black/40 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
                           {isRu ? "Номер карты получателя:" : "Karta raqami (Admin):"}
                         </span>
-                        <span className="font-mono text-base sm:text-lg font-black tracking-wider text-white">
-                          {activeCardNumber}
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCard()}
+                          className="px-3 py-1 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-violet-600/30"
+                        >
+                          {copiedCard ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-300 stroke-[3]" />
+                              <span className="text-emerald-300 font-bold">{isRu ? "Скопировано!" : "Nusxalandi!"}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>{isRu ? "Nusxalash" : "Nusxa olish"}</span>
+                            </>
+                          )}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyCard()}
-                        className="px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-violet-600/30"
-                      >
-                        {copiedCard ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-300 stroke-[3]" />
-                            <span className="text-emerald-300 font-bold">{isRu ? "Скопировано!" : "Nusxalandi!"}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>{isRu ? "Nusxalash" : "Nusxa olish"}</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="font-mono text-lg sm:text-xl font-black tracking-widest text-white whitespace-nowrap select-all">
+                        {activeCardNumber}
+                      </div>
                     </div>
 
-                    {/* Card Holder & Total Amount */}
+                    {/* Card Holder & Bank */}
                     <div className="flex justify-between items-center text-xs text-slate-300 pt-0.5 border-t border-slate-700/60">
                       <span>{isRu ? "Владелец:" : "Karta egasi:"} <b className="text-white font-bold">{activeCardHolder}</b></span>
-                      <span className="font-mono font-bold text-violet-400">{formatUzbekCurrency(totalPrice)}</span>
+                      <span className="font-mono text-[11px] text-slate-400 uppercase">{activeCardBank || "Uzcard / Humo"}</span>
                     </div>
 
                     {/* Direct App Launch Button */}
