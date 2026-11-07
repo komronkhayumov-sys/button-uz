@@ -633,11 +633,11 @@ export default function CartPage() {
                       <span>
                         {subtotalPrice >= 500000
                           ? isRu
-                            ? "Бесплатная доставка по Ташкенту (при заказе от 500 000 сум)"
-                            : "Toshkent bo'ylab bepul yetkazib berish (500 000 so'mdan yuqori)"
+                            ? "Бесплатная доставка по Ташкенту — по согласованию с продавцом (при заказе от 500 000 сум)"
+                            : "Toshkent bo'ylab bepul yetkazib berish — sotuvchi bilan kelishilgan holatda (500 000 so'mdan yuqori)"
                           : isRu
-                          ? "Доставка по Ташкенту: 30 000 сум (Бесплатно от 500 000 сум)"
-                          : "Toshkent bo'ylab yetkazish: 30 000 so'm (500 000 so'mdan bepul)"}
+                          ? "Доставка по Ташкенту: 30 000 сум — по согласованию с продавцом (Бесплатно от 500 000 сум)"
+                          : "Toshkent bo'ylab yetkazish: 30 000 so'm — sotuvchi bilan kelishilgan holatda (500 000 so'mdan bepul)"}
                       </span>
                     </div>
 
