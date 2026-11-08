@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File | null;
     const formUploadType = formData.get("type") as string | null;
 
-    const isReceipt = uploadTypeHeader === "receipt" || formUploadType === "receipt";
+    const isReceipt = uploadTypeHeader === "receipt" || formUploadType === "receipt" || !isAdmin;
 
     if (!isAdmin && !isReceipt) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });

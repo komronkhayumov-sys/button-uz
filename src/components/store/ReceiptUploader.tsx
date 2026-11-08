@@ -14,6 +14,65 @@ interface ReceiptUploaderProps {
   onUploaded?: (url: string) => void;
 }
 
+function compressReceiptImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || !window.FileReader) {
+      resolve("");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      if (!src) {
+        resolve("");
+        return;
+      }
+
+      const img = new window.Image();
+      img.onload = () => {
+        try {
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(src);
+            return;
+          }
+
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressed = canvas.toDataURL("image/jpeg", 0.82);
+          resolve(compressed);
+        } catch {
+          resolve(src);
+        }
+      };
+      img.onerror = () => resolve(src);
+      img.src = src;
+    };
+    reader.onerror = () => reject(new Error("Faylni o'qishda xatolik"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function ReceiptUploader({
   orderId,
   lang = "uz",
@@ -35,13 +94,8 @@ export default function ReceiptUploader({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setErrorMsg(isRu ? "Пожалуйста, загрузите изображение (JPG, PNG)" : "Iltimos, faqat rasm faylini yuklang (JPG, PNG)");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setErrorMsg(isRu ? "Размер файла не должен превышать 10 МБ" : "Fayl hajmi 10MB dan oshmasligi kerak");
+    if (!file.type.startsWith("image/") && !/\.(jpe?g|png|webp|heic|bmp)$/i.test(file.name)) {
+      setErrorMsg(isRu ? "Пожалуйста, выберите фото или скриншот (JPG, PNG)" : "Iltimos, rasm yoki skrinshot faylini tanlang (JPG, PNG)");
       return;
     }
 
@@ -49,26 +103,45 @@ export default function ReceiptUploader({
     setErrorMsg("");
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("type", "receipt");
-
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        headers: {
-          "x-upload-type": "receipt",
-        },
-        body: formData,
-      });
-
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok || !uploadData.success || !uploadData.url) {
-        throw new Error(uploadData.error || (isRu ? "Ошибка загрузки фото" : "Rasm yuklashda xatolik yuz berdi"));
+      // 1. Client-side compression to avoid Vercel 4.5MB payload limit
+      let compressedDataUrl = "";
+      try {
+        compressedDataUrl = await compressReceiptImage(file);
+      } catch (cErr) {
+        console.warn("[receipt] Compression skipped:", cErr);
       }
 
-      const uploadedUrl = uploadData.url;
+      let uploadedUrl = compressedDataUrl;
 
-      // Update order with receipt URL
+      // 2. Attempt uploading to /api/upload with fallback to compressedDataUrl
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("type", "receipt");
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: {
+            "x-upload-type": "receipt",
+          },
+          body: formData,
+        });
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          if (uploadData.success && uploadData.url) {
+            uploadedUrl = uploadData.url;
+          }
+        }
+      } catch (uploadErr) {
+        console.warn("[receipt] Upload API fallback to direct data URL:", uploadErr);
+      }
+
+      if (!uploadedUrl) {
+        throw new Error(isRu ? "Ошибка обработки изображения" : "Rasmni qayta ishlashda xatolik yuz berdi");
+      }
+
+      // 3. Update order in database via PATCH /api/orders
       const orderRes = await fetch("/api/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -82,6 +155,19 @@ export default function ReceiptUploader({
       if (!orderRes.ok || !orderData.success) {
         throw new Error(orderData.error || (isRu ? "Не удалось обновить заказ" : "Buyurtmani yangilab bo'lmadi"));
       }
+
+      // 4. Update customer's localStorage orders list
+      try {
+        const stored = JSON.parse(localStorage.getItem("button_customer_orders") || "[]");
+        if (Array.isArray(stored)) {
+          const updatedList = stored.map((o: any) =>
+            o.id === orderId
+              ? { ...o, paymentReceipt: uploadedUrl, paymentStatus: "verifying" }
+              : o
+          );
+          localStorage.setItem("button_customer_orders", JSON.stringify(updatedList));
+        }
+      } catch {}
 
       setReceiptUrl(uploadedUrl);
       setStatus("verifying");
@@ -174,7 +260,6 @@ export default function ReceiptUploader({
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={handleFileChange}
           className="hidden"
           id={`receipt-input-${orderId}`}

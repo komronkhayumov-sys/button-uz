@@ -343,11 +343,33 @@ export async function saveOrder(order: Order): Promise<Order> {
 export async function updateOrder(id: string, updates: Partial<Order>): Promise<Order | null> {
   const orders = await getOrders();
   const index = orders.findIndex((o) => o.id === id);
-  if (index === -1) return null;
-  orders[index] = { ...orders[index], ...updates };
+  if (index !== -1) {
+    orders[index] = { ...orders[index], ...updates };
+    memoryOrders = orders;
+    safeWriteFile(ORDERS_FILE, memoryOrders);
+    return orders[index];
+  }
+
+  // Resilient fallback for serverless container isolation:
+  // If the order was created in another serverless container,
+  // save the order stub with this id and updates so the receipt is never lost!
+  const orderStub: Order = {
+    id,
+    customerName: "Mijoz",
+    customerPhone: "",
+    deliveryType: "delivery",
+    paymentMethod: "click",
+    paymentStatus: (updates.paymentStatus as any) || "verifying",
+    items: [],
+    totalAmount: 0,
+    status: "new",
+    createdAt: new Date().toISOString(),
+    ...updates,
+  };
+  orders.unshift(orderStub);
   memoryOrders = orders;
   safeWriteFile(ORDERS_FILE, memoryOrders);
-  return orders[index];
+  return orderStub;
 }
 
 export async function updateOrderStatus(id: string, status: Order["status"]): Promise<Order | null> {

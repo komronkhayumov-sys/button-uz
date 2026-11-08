@@ -89,3 +89,58 @@ ${itemsText}
     return { success: false, error: errorMsg };
   }
 }
+
+export async function sendTelegramReceiptNotification(
+  orderId: string,
+  receiptUrl: string
+): Promise<{ success: boolean; simulated?: boolean; error?: string }> {
+  try {
+    const settings = await getSettings();
+    const botToken = settings.telegramBotToken?.trim() || process.env.TELEGRAM_BOT_TOKEN?.trim();
+    const chatId = settings.telegramChatId?.trim() || process.env.TELEGRAM_CHAT_ID?.trim();
+
+    if (!botToken || !chatId) {
+      return { success: true, simulated: true };
+    }
+
+    const caption = `
+📸 <b>YANGI TO'LOV CHEKI / SKRINSHOT KELDI!</b>
+━━━━━━━━━━━━━━━━━━━━
+🆔 <b>Buyurtma ID:</b> <code>#${orderId}</code>
+📅 <b>Vaqt:</b> ${new Date().toLocaleString("uz-UZ", { timeZone: "Asia/Tashkent" })}
+⚡ <i>Xaridor to'lovni tasdiqlash uchun chek skrinshotini yukladi. Admin paneldan tekshirishingiz mumkin!</i>
+━━━━━━━━━━━━━━━━━━━━
+`.trim();
+
+    // If receiptUrl is a remote URL, send as photo
+    if (receiptUrl.startsWith("http://") || receiptUrl.startsWith("https://")) {
+      const url = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          photo: receiptUrl,
+          caption,
+          parse_mode: "HTML",
+        }),
+      });
+      return { success: res.ok };
+    }
+
+    // Otherwise send text notification
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: caption,
+        parse_mode: "HTML",
+      }),
+    });
+    return { success: res.ok };
+  } catch (err) {
+    return { success: false };
+  }
+}

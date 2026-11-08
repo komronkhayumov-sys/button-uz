@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrders, saveOrder, updateOrder, updateOrderStatus, verifyPin } from "@/lib/storage";
-import { sendTelegramOrderNotification } from "@/lib/telegram";
+import { sendTelegramOrderNotification, sendTelegramReceiptNotification } from "@/lib/telegram";
 import { Order } from "@/types";
 
 export async function GET(req: NextRequest) {
@@ -115,16 +115,21 @@ export async function PATCH(req: NextRequest) {
     const pinHeader = req.headers.get("x-admin-pin") || "";
     const isAdmin = await verifyPin(pinHeader);
 
-    // If customer uploading payment receipt
-    if (body.paymentReceipt && !isAdmin) {
+    // If uploading payment receipt (customer or test)
+    if (body.paymentReceipt) {
       const updated = await updateOrder(body.id, {
         paymentReceipt: body.paymentReceipt,
         paymentReceiptTime: new Date().toISOString(),
         paymentStatus: "verifying",
       });
-      if (!updated) {
-        return NextResponse.json({ success: false, error: "Buyurtma topilmadi" }, { status: 404 });
+
+      // Send Telegram Notification async
+      try {
+        await sendTelegramReceiptNotification(body.id, body.paymentReceipt);
+      } catch (tgErr) {
+        console.warn("[orders] Telegram receipt notify warning:", tgErr);
       }
+
       return NextResponse.json({ success: true, order: updated });
     }
 

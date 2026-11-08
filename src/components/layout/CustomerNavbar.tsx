@@ -94,10 +94,10 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
           <button
             type="button"
             onClick={() => onSectionChange("katalog")}
-            className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer text-left focus:outline-none"
+            className="flex items-center gap-2 sm:gap-3 group cursor-pointer text-left focus:outline-none"
           >
             {/* Dynamic Store Logo from Admin or /btn-logo.png */}
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden relative shadow-sm shrink-0 border border-slate-200 dark:border-slate-700 bg-black">
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-full overflow-hidden relative shadow-sm shrink-0 border border-slate-200 dark:border-slate-700 bg-black">
               <Image
                 src={settings?.storeAvatar || "/btn-logo.png"}
                 alt={settings?.storeName || "BUTTON"}
@@ -108,7 +108,7 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
               />
             </div>
             <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5 leading-tight">
+              <div className="flex items-center gap-1 sm:gap-1.5 leading-tight">
                 <span className="font-black text-sm sm:text-lg tracking-tight text-[#0F172A] dark:text-white font-sans">
                   BUTTON
                 </span>
@@ -116,13 +116,16 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
                   MEN
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-[#64748B] dark:text-slate-400 font-medium leading-none mt-0.5 whitespace-nowrap">
+              <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-[11px] text-[#64748B] dark:text-slate-400 font-medium leading-none mt-0.5">
                 <span
                   className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 ${
                     timeStatus.isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
                   }`}
                 />
-                <span className="truncate">
+                <span className="sm:hidden font-bold truncate">
+                  {timeStatus.isOpen ? (isUz ? "Ochiq" : "Открыто") : (isUz ? "Yopiq" : "Закрыто")}
+                </span>
+                <span className="hidden sm:inline truncate">
                   {isUz ? timeStatus.statusTextUz : timeStatus.statusTextRu}
                 </span>
               </div>
@@ -213,7 +216,7 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
         </nav>
 
         {/* Right Actions: Search, Wishlist, Cart, Language, Theme, Shield, Profile */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Mobile Search Icon Button (Never shows ⌘K on mobile) */}
           <button
             type="button"
@@ -224,7 +227,7 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
                 el?.focus();
               }, 100);
             }}
-            className="lg:hidden p-2 rounded-xl text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F1F5F9] dark:hover:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-800 transition-all cursor-pointer shrink-0"
+            className="lg:hidden p-1.5 sm:p-2 rounded-xl text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F1F5F9] dark:hover:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-800 transition-all cursor-pointer shrink-0"
             title={isUz ? "Qidiruv" : "Поиск"}
             aria-label="Search"
           >
@@ -282,24 +285,24 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
           <Link
             href="/cart"
             onClick={onOpenCart}
-            className="relative p-2 rounded-xl text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F1F5F9] dark:hover:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-800 transition-all cursor-pointer shrink-0"
+            className="relative p-1.5 sm:p-2 rounded-xl text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F1F5F9] dark:hover:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-800 transition-all cursor-pointer shrink-0"
             title={isUz ? "Savat" : "Корзина"}
             aria-label="Cart"
           >
-            <ShoppingBag className="w-4.5 h-4.5" />
+            <ShoppingBag className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             {cartCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#2563EB] text-white text-[10px] font-black flex items-center justify-center animate-scale-in">
+              <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#2563EB] text-white text-[9px] sm:text-[10px] font-black flex items-center justify-center animate-scale-in">
                 {cartCount}
               </span>
             )}
           </Link>
 
           {/* Language Switcher (UZ / RU Pill matching mockup) */}
-          <div className="flex items-center bg-[#F1F5F9] dark:bg-[#1e293b] p-0.5 rounded-full border border-[#E2E8F0] dark:border-slate-700 text-xs font-bold shrink-0">
+          <div className="flex items-center bg-[#F1F5F9] dark:bg-[#1e293b] p-0.5 rounded-full border border-[#E2E8F0] dark:border-slate-700 text-[10px] sm:text-xs font-bold shrink-0">
             <button
               type="button"
               onClick={() => onLanguageChange("uz")}
-              className={`px-2 sm:px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full transition-all cursor-pointer ${
                 lang === "uz"
                   ? "bg-[#2563EB] text-white shadow-xs font-black"
                   : "text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white"
@@ -310,7 +313,7 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
             <button
               type="button"
               onClick={() => onLanguageChange("ru")}
-              className={`px-2 sm:px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full transition-all cursor-pointer ${
                 lang === "ru"
                   ? "bg-[#2563EB] text-white shadow-xs font-black"
                   : "text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white"
@@ -320,15 +323,15 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
             </button>
           </div>
 
-          {/* Theme Toggle (Sun/Moon) */}
+          {/* Theme Toggle (Sun/Moon - Always visible, never wraps or clips) */}
           <button
             type="button"
             onClick={onToggleTheme}
-            className="p-2 rounded-xl text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#1e293b] hover:bg-[#F1F5F9] dark:hover:bg-slate-800 transition-all cursor-pointer shrink-0"
+            className="p-1.5 sm:p-2 rounded-xl text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#1e293b] hover:bg-[#F1F5F9] dark:hover:bg-slate-800 transition-all cursor-pointer shrink-0"
             title={isDark ? "Yorug' rejim (Light mode)" : "Qorong'u rejim (Dark mode)"}
             aria-label="Toggle Theme"
           >
-            {isDark ? <Sun className="w-4 h-4 text-violet-400" /> : <Moon className="w-4 h-4 text-violet-700" />}
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-violet-700 dark:text-violet-400" />}
           </button>
 
           {/* Security / Info Shield Icon */}
