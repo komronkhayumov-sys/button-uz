@@ -100,7 +100,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 280000,
     "oldPrice": 350000,
     "category": "hoodies",
-    "image": "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-001.jpg",
     "sizes": [
       "M",
       "L",
@@ -121,7 +121,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 160000,
     "oldPrice": 200000,
     "category": "polos",
-    "image": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-002.jpg",
     "sizes": [
       "S",
       "M",
@@ -142,7 +142,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 320000,
     "oldPrice": 390000,
     "category": "pants",
-    "image": "https://images.unsplash.com/photo-1542272604-780c96856592?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-003.jpg",
     "sizes": [
       "29",
       "30",
@@ -166,7 +166,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 450000,
     "oldPrice": 560000,
     "category": "shoes",
-    "image": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-004.jpg",
     "sizes": [
       "39",
       "40",
@@ -189,7 +189,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 220000,
     "oldPrice": 280000,
     "category": "polos",
-    "image": "https://images.unsplash.com/photo-1625910513413-72223846e100?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-005.jpg",
     "sizes": [
       "M",
       "L",
@@ -210,7 +210,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 420000,
     "oldPrice": 520000,
     "category": "jackets",
-    "image": "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-006.jpg",
     "sizes": [
       "M",
       "L",
@@ -231,7 +231,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 290000,
     "oldPrice": 360000,
     "category": "pants",
-    "image": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-007.jpg",
     "sizes": [
       "30",
       "31",
@@ -254,7 +254,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 480000,
     "oldPrice": 590000,
     "category": "suits",
-    "image": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-008.jpg",
     "sizes": [
       "M",
       "L",
@@ -275,7 +275,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 250000,
     "oldPrice": 310000,
     "category": "polos",
-    "image": "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-009.jpg",
     "sizes": [
       "S",
       "M",
@@ -297,7 +297,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 390000,
     "oldPrice": 480000,
     "category": "shoes",
-    "image": "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-010.jpg",
     "sizes": [
       "40",
       "41",
@@ -319,7 +319,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 350000,
     "oldPrice": 430000,
     "category": "jackets",
-    "image": "https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-011.jpg",
     "sizes": [
       "M",
       "L",
@@ -340,7 +340,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 260000,
     "oldPrice": 320000,
     "category": "hoodies",
-    "image": "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-012.jpg",
     "sizes": [
       "M",
       "L",
@@ -361,7 +361,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 440000,
     "oldPrice": 550000,
     "category": "suits",
-    "image": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-013.jpg",
     "sizes": [
       "M",
       "L",
@@ -382,7 +382,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 270000,
     "oldPrice": 340000,
     "category": "pants",
-    "image": "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-014.jpg",
     "sizes": [
       "29",
       "30",
@@ -404,7 +404,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 230000,
     "oldPrice": 290000,
     "category": "hoodies",
-    "image": "https://images.unsplash.com/photo-1614975058789-41316d0e2e9c?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-015.jpg",
     "sizes": [
       "M",
       "L",
@@ -425,7 +425,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 520000,
     "oldPrice": 650000,
     "category": "shoes",
-    "image": "https://images.unsplash.com/photo-1638247025967-b4e38f787b76?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-016.jpg",
     "sizes": [
       "40",
       "41",
@@ -447,7 +447,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 410000,
     "oldPrice": 510000,
     "category": "jackets",
-    "image": "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-017.jpg",
     "sizes": [
       "M",
       "L",
@@ -468,7 +468,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 195000,
     "oldPrice": 240000,
     "category": "polos",
-    "image": "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-018.jpg",
     "sizes": [
       "M",
       "L",
@@ -489,7 +489,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 310000,
     "oldPrice": 380000,
     "category": "pants",
-    "image": "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-019.jpg",
     "sizes": [
       "30",
       "31",
@@ -512,7 +512,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "price": 180000,
     "oldPrice": 230000,
     "category": "accessories",
-    "image": "https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=800&q=80",
+    "image": "/products/btn-020.jpg",
     "sizes": [
       "Standart"
     ],
