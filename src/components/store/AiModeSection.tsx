@@ -266,10 +266,10 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
   }, [selectedScenario, suits, jackets, polos, hoodies, pants, shoes, accessories, products]);
 
   // Currently selected items for the 4 layers
-  const outerItem = currentPools.outer[outerIndex % currentPools.outer.length] || products[0];
-  const topItem = currentPools.top[topIndex % currentPools.top.length] || products[1];
-  const bottomItem = currentPools.bottom[bottomIndex % currentPools.bottom.length] || products[2];
-  const shoesItem = currentPools.footwear[shoesIndex % currentPools.footwear.length] || products[3];
+  const outerItem = currentPools.outer.length > 0 ? currentPools.outer[outerIndex % currentPools.outer.length] : products[0];
+  const topItem = currentPools.top.length > 0 ? currentPools.top[topIndex % currentPools.top.length] : products[1];
+  const bottomItem = currentPools.bottom.length > 0 ? currentPools.bottom[bottomIndex % currentPools.bottom.length] : products[2];
+  const shoesItem = currentPools.footwear.length > 0 ? currentPools.footwear[shoesIndex % currentPools.footwear.length] : products[3];
 
   const selectedItems = useMemo(() => {
     // Collect unique non-null items
@@ -695,19 +695,33 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
       {/* ========================================================
           4. LOOK STUDIO: 4 INTERACTIVE GARMENT LAYERS
           ======================================================== */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-black text-sm sm:text-base text-[#0F172A] dark:text-white flex items-center gap-2">
-            <Layers className="w-4 h-4 text-violet-700 dark:text-violet-400" />
-            <span>{isUz ? "Look Studio: Boshdan-Oyoq 4 Qavat" : "Студия образов: 4 слоя гардероба"}</span>
+      {products.length === 0 ? (
+        <div className="p-10 text-center rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 space-y-3 shadow-sm dark:shadow-xl">
+          <Sparkles className="w-10 h-10 text-violet-600 mx-auto opacity-50 animate-pulse" />
+          <h3 className="font-bold text-sm text-[#0F172A] dark:text-white">
+            {isUz ? "Hozircha mahsulotlar mavjud emas" : "Товары пока не добавлены"}
           </h3>
+          <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-sm mx-auto">
+            {isUz
+              ? "Katalogga yangi kiyimlar joylanishi bilan AI Stilist sizga tayyor obrazlarni tanlab beradi."
+              : "После добавления товаров в каталог AI Стилист подберет готовые образы."}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-sm sm:text-base text-[#0F172A] dark:text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-violet-700 dark:text-violet-400" />
+                <span>{isUz ? "Look Studio: Boshdan-Oyoq 4 Qavat" : "Студия образов: 4 слоя гардероба"}</span>
+              </h3>
 
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
-            <button
-              type="button"
-              onClick={() => setViewStyle("stack")}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                viewStyle === "stack" ? "bg-violet-700 text-white" : "text-[#64748B] dark:text-slate-400"
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setViewStyle("stack")}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                    viewStyle === "stack" ? "bg-violet-700 text-white" : "text-[#64748B] dark:text-slate-400"
               }`}
             >
               {isUz ? "Qatlamlar" : "Слои"}
@@ -965,6 +979,8 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </>
+  )}
+</div>
   );
 };

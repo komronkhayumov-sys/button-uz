@@ -133,35 +133,12 @@ export async function verifyPin(pin: string): Promise<boolean> {
 
 // ------------------- CUSTOMERS STORAGE -------------------
 export async function getCustomers(): Promise<Customer[]> {
-  if (memoryCustomers) {
+  if (memoryCustomers !== null) {
     return memoryCustomers;
   }
 
-  const initialCustomers: Customer[] = [
-    {
-      id: "cust-1",
-      name: "Jasur Aliyev",
-      phone: "+998 90 123 45 67",
-      address: "Toshkent sh., Chilonzor 9, 15-uy",
-      preferredSize: "L / 50",
-      ordersCount: 2,
-      totalSpent: 1470000,
-      registeredAt: "2026-11-02T10:30:00Z",
-    },
-    {
-      id: "cust-2",
-      name: "Sardor Rustamov",
-      phone: "+998 90 999 88 77",
-      address: "Toshkent sh., Yunusobod 11, 44-uy",
-      preferredSize: "XL",
-      ordersCount: 1,
-      totalSpent: 490000,
-      registeredAt: "2026-11-04T14:15:00Z",
-    },
-  ];
-
-  const loaded = safeReadFile<Customer[]>(CUSTOMERS_FILE, "customers.json", initialCustomers);
-  memoryCustomers = Array.isArray(loaded) ? loaded : initialCustomers;
+  const loaded = safeReadFile<Customer[]>(CUSTOMERS_FILE, "customers.json", []);
+  memoryCustomers = Array.isArray(loaded) ? loaded : [];
   return memoryCustomers;
 }
 
@@ -246,17 +223,12 @@ export async function updateCustomer(id: string, updates: Partial<Customer>): Pr
 
 // ------------------- PRODUCTS STORAGE -------------------
 export async function getProducts(): Promise<Product[]> {
-  if (memoryProducts && memoryProducts.length > 0) {
+  if (memoryProducts !== null) {
     return memoryProducts;
   }
 
-  const loaded = safeReadFile<Product[]>(PRODUCTS_FILE, "products.json", INITIAL_PRODUCTS);
-  if (Array.isArray(loaded) && loaded.length > 0) {
-    memoryProducts = loaded;
-  } else {
-    memoryProducts = INITIAL_PRODUCTS;
-    safeWriteFile(PRODUCTS_FILE, memoryProducts);
-  }
+  const loaded = safeReadFile<Product[]>(PRODUCTS_FILE, "products.json", []);
+  memoryProducts = Array.isArray(loaded) ? loaded : [];
   return memoryProducts;
 }
 
@@ -332,7 +304,7 @@ export async function deleteProduct(id: string): Promise<boolean> {
 
 // ------------------- ORDERS STORAGE -------------------
 export async function getOrders(): Promise<Order[]> {
-  if (memoryOrders) {
+  if (memoryOrders !== null) {
     return memoryOrders;
   }
 

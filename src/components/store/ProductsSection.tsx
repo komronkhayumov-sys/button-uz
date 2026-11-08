@@ -466,23 +466,29 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
       {isLoading ? (
         <ProductSkeleton count={8} />
       ) : filteredProducts.length === 0 ? (
-        <div className="p-12 text-center rounded-3xl bg-[#151B25] border border-[#293241] space-y-3">
+        <div className="p-12 text-center rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 space-y-3 shadow-sm dark:shadow-xl">
           <ShoppingBag className="w-12 h-12 text-[#9AA6B6] mx-auto opacity-50" />
-          <h3 className="font-bold text-sm text-[#F5F7FA]">
-            {isUz ? "Mahsulot topilmadi" : "Товары не найдены"}
+          <h3 className="font-bold text-sm text-[#0F172A] dark:text-white">
+            {products.length === 0
+              ? (isUz ? "Hozircha mahsulotlar mavjud emas" : "Товары пока не добавлены")
+              : (isUz ? "Mahsulot topilmadi" : "Товары не найдены")}
           </h3>
-          <p className="text-xs text-[#9AA6B6] max-w-sm mx-auto">
-            {isUz
-              ? "Bu qidiruv yoki filtrlar bo'yicha mahsulot topilmadi. Boshqa so'z bilan qidirib ko'ring."
-              : "По данному запросу товаров не найдено. Попробуйте изменить параметры поиска."}
+          <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-sm mx-auto">
+            {products.length === 0
+              ? (isUz ? "Yangi kolleksiya tez kunda katalogga joylanadi." : "Новая коллекция скоро появится в каталоге.")
+              : (isUz
+                ? "Bu qidiruv yoki filtrlar bo'yicha mahsulot topilmadi. Boshqa so'z bilan qidirib ko'ring."
+                : "По данному запросу товаров не найдено. Попробуйте изменить параметры поиска.")}
           </p>
-          <button
-            type="button"
-            onClick={handleClearFilters}
-            className="mt-2 px-5 py-2.5 rounded-xl bg-[#E5A850] text-zinc-950 font-black text-xs cursor-pointer shadow-md"
-          >
-            {isUz ? "Filtrlarni tozalash" : "Сбросить фильтры"}
-          </button>
+          {products.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="mt-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs cursor-pointer shadow-md transition-all"
+            >
+              {isUz ? "Filtrlarni tozalash" : "Сбросить фильтры"}
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
