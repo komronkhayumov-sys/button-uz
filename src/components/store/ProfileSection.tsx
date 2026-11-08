@@ -31,6 +31,8 @@ import {
   AlertCircle,
   LogOut,
   UserPlus,
+  Smartphone,
+  Download,
 } from "lucide-react";
 import { Customer, CustomerMeasurements, Language, Order, Product } from "@/types";
 import { formatUzbekCurrency } from "@/lib/format";
@@ -1312,6 +1314,28 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             </span>
           </div>
           <ChevronRight className="w-4 h-4 text-[#94A3B8] group-hover:translate-x-0.5 transition-transform" />
+        </button>
+
+        {/* Do'kon ilovasini telefoningizga o'rnatish (PWA Install Action) */}
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("open-pwa-install"))}
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-blue-50/60 dark:hover:bg-blue-950/20 transition-colors cursor-pointer group border-b border-[#E2E8F0] dark:border-slate-800"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-xs sm:text-sm font-bold text-[#0F172A] dark:text-white truncate">
+                {isUz ? "BUTTON ilovasini telefoningizga o'rnatish" : "Установить приложение BUTTON на телефон"}
+              </span>
+              <span className="block text-[11px] text-blue-600 dark:text-blue-400 font-semibold truncate">
+                {isUz ? "Bosh ekranga qo'shish va 1 bosishda tezkor kirish (PWA)" : "Добавить на главный экран для быстрого входа"}
+              </span>
+            </div>
+          </div>
+          <Download className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 group-hover:translate-y-0.5 transition-transform" />
         </button>
 
         {/* Sozlamalar: Til (UZ / RU) */}

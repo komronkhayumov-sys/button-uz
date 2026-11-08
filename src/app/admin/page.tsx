@@ -58,6 +58,8 @@ import {
   Menu,
   Star,
   Palette,
+  Smartphone,
+  Download,
   Sparkles,
   Tag,
 } from "lucide-react";
@@ -1062,6 +1064,16 @@ export default function AdminPage() {
               </button>
             </div>
 
+            {/* PWA Admin App Install Button */}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-pwa-install"))}
+              className="p-2 rounded-xl border cursor-pointer bg-blue-500/15 text-blue-500 border-blue-500/30 hover:bg-blue-500/25 transition-all shadow-xs"
+              title={lang === "ru" ? "Установить Admin App" : "Admin ilovasini o'rnatish"}
+            >
+              <Smartphone className="w-4 h-4" />
+            </button>
+
             {/* Notification Bell */}
             <button
               onClick={() => setActiveMenu("orders")}
@@ -1248,6 +1260,31 @@ export default function AdminPage() {
 
             {/* Mobile Bottom: Security, Profile, Logout */}
             <div className={`space-y-2 pt-3 border-t mt-3 shrink-0 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+              {/* Admin App Install Recommendation Card */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  window.dispatchEvent(new CustomEvent("open-pwa-install"));
+                }}
+                className="w-full p-2.5 rounded-2xl bg-gradient-to-r from-blue-600/20 via-indigo-600/20 to-purple-600/20 border border-blue-500/30 text-blue-400 hover:text-white transition-all text-left flex items-center justify-between gap-2 cursor-pointer shadow-sm"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                    <Smartphone className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-xs font-bold leading-tight truncate">
+                      {lang === "ru" ? "Установить Admin App" : "Admin ilovasini o'rnatish"}
+                    </span>
+                    <span className="block text-[10px] text-zinc-400 leading-tight truncate">
+                      {lang === "ru" ? "Быстрый доступ на телефоне" : "Bosh ekranga ilova sifatida qo'shish"}
+                    </span>
+                  </div>
+                </div>
+                <Download className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              </button>
+
               {/* PIN Kod */}
               <button
                 onClick={() => { setActiveMenu("security"); setMobileMenuOpen(false); }}
@@ -1495,6 +1532,28 @@ export default function AdminPage() {
 
         {/* Sidebar Bottom: PIN, Profile, Logout - Anchored at the bottom-left corner */}
         <div className={`space-y-2 pt-3 pb-3 mt-auto border-t relative z-20 shrink-0 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+          {/* Admin App Install Recommendation Card */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-pwa-install"))}
+            className="w-full p-2.5 rounded-2xl bg-gradient-to-r from-blue-600/15 via-indigo-600/15 to-purple-600/15 border border-blue-500/30 text-blue-400 hover:text-white hover:bg-blue-600/25 transition-all text-left flex items-center justify-between gap-2 cursor-pointer shadow-sm group"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Smartphone className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="block text-xs font-bold leading-tight truncate">
+                  {lang === "ru" ? "Установить Admin App" : "Admin ilovasini o'rnatish"}
+                </span>
+                <span className="block text-[10px] text-zinc-400 leading-tight truncate">
+                  {lang === "ru" ? "Быстрый доступ на телефоне" : "Telefon ekraniga o'rnatish"}
+                </span>
+              </div>
+            </div>
+            <Download className="w-3.5 h-3.5 text-blue-400 shrink-0 group-hover:translate-y-0.5 transition-transform" />
+          </button>
+
           {/* PIN Kod */}
           <button
             onClick={() => {
