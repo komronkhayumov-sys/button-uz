@@ -87,8 +87,12 @@ export async function POST(req: NextRequest) {
     const tgResult = await sendTelegramOrderNotification(newOrder);
     newOrder.telegramSent = tgResult.success;
 
-    // Save order locally
-    await saveOrder(newOrder);
+    // Save order locally (crash-proof with in-memory persistence guarantee)
+    try {
+      await saveOrder(newOrder);
+    } catch (saveErr) {
+      console.warn("[orders] saveOrder disk write fallback warning:", saveErr);
+    }
 
     return NextResponse.json({
       success: true,

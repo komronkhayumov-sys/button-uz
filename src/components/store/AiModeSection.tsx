@@ -28,12 +28,13 @@ import {
   Send,
   MessageSquare,
 } from "lucide-react";
-import { Language, Product, CustomerMeasurements } from "@/types";
+import { Language, Product, CustomerMeasurements, StoreSettings } from "@/types";
 import { formatUzbekCurrency } from "@/lib/format";
 
 interface AiModeSectionProps {
   products: Product[];
   lang: Language;
+  settings?: StoreSettings | null;
   onAddToCart: (product: Product, size?: string, color?: string, quantity?: number) => void;
   onSelectProduct: (product: Product) => void;
   onOrderOutfit: (comboItems: Product[], totalAmount: number, comboTitle: string) => void;
@@ -164,6 +165,7 @@ const SCENARIOS: ScenarioConfig[] = [
 export const AiModeSection: React.FC<AiModeSectionProps> = ({
   products,
   lang,
+  settings,
   onAddToCart,
   onSelectProduct,
   onOrderOutfit,
@@ -171,6 +173,7 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
   onNavigateToProducts,
 }) => {
   const isUz = lang === "uz";
+  const comboDiscountPercent = settings?.comboDiscountPercent ?? 10;
 
   // Scenario & mode state
   const [selectedScenario, setSelectedScenario] = useState<ScenarioKey>("wedding");
@@ -349,10 +352,10 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
     return selectedItems.reduce((acc, item) => acc + (item.price || 0), 0);
   }, [selectedItems]);
 
-  // 10% outfit bundle incentive
+  // Outfit bundle incentive (Adjustable by Admin)
   const discountedPrice = useMemo(() => {
-    return Math.round(totalPrice * 0.9);
-  }, [totalPrice]);
+    return Math.round(totalPrice * (1 - comboDiscountPercent / 100));
+  }, [totalPrice, comboDiscountPercent]);
 
   const savedAmount = totalPrice - discountedPrice;
 
@@ -1080,7 +1083,11 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
           <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 font-bold">
             <span className="flex items-center gap-1">
               <span>🎉</span>
-              <span>{isUz ? "To'liq obraz maxsus chegirmasi (-10%):" : "Скидка на полный образ (-10%):"}</span>
+              <span>
+                {isUz
+                  ? `To'liq obraz maxsus chegirmasi (-${comboDiscountPercent}%):`
+                  : `Скидка на полный образ (-${comboDiscountPercent}%):`}
+              </span>
             </span>
             <span className="font-mono">- {formatUzbekCurrency(savedAmount)}</span>
           </div>
@@ -1120,7 +1127,11 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
             ) : (
               <>
                 <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
-                <span>{isUz ? "⚡ Butun Obrazni Savatga Olish (-10%)" : "Купить весь образ со скидкой"}</span>
+                <span>
+                  {isUz
+                    ? `⚡ Butun Obrazni Savatga Olish (-${comboDiscountPercent}%)`
+                    : `Купить весь образ со скидкой (-${comboDiscountPercent}%)`}
+                </span>
               </>
             )}
           </button>

@@ -9,7 +9,8 @@ const isServerless = Boolean(
   process.env.VERCEL ||
   process.env.AWS_LAMBDA_FUNCTION_NAME ||
   process.env.LAMBDA_TASK_ROOT ||
-  process.env.NOW_REGION
+  process.env.NOW_REGION ||
+  (typeof process.cwd === "function" && (process.cwd().startsWith("/var/task") || process.cwd().startsWith("/var/runtime") || process.cwd().startsWith("/tmp")))
 );
 
 // Determine writable data directory safely
@@ -18,7 +19,12 @@ function getWritableDirectory(): string {
     return path.join(os.tmpdir(), "button-data");
   }
 
-  const localDir = path.join(process.cwd(), "data");
+  const cwd = process.cwd();
+  if (cwd.startsWith("/var/task") || cwd.startsWith("/var/runtime")) {
+    return path.join(os.tmpdir(), "button-data");
+  }
+
+  const localDir = path.join(cwd, "data");
   try {
     if (!fs.existsSync(localDir)) {
       fs.mkdirSync(localDir, { recursive: true });

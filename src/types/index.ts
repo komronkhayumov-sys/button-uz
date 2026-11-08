@@ -154,4 +154,12 @@ export type StoreSettings = {
   telegramBotToken?: string;
   telegramChatId?: string;
   branches: Branch[];
+  // Delivery & Tariffs (Adjustable by Admin)
+  deliveryPriceTashkent?: number;
+  deliveryFreeThresholdTashkent?: number;
+  deliveryPriceRegions?: number;
+  deliveryFreeThresholdRegions?: number;
+  // Discounts & Promotions (Adjustable by Admin)
+  comboDiscountPercent?: number;
+  globalPromoDiscountPercent?: number;
 };

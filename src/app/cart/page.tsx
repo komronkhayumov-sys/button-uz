@@ -172,18 +172,23 @@ export default function CartPage() {
     setCustomerPhone(val);
   };
 
-  // Pricing calculations
+  // Pricing calculations (Adjustable by Admin)
+  const deliveryPriceTashkent = settings?.deliveryPriceTashkent ?? 30000;
+  const deliveryFreeThresholdTashkent = settings?.deliveryFreeThresholdTashkent ?? 500000;
+  const deliveryPriceRegions = settings?.deliveryPriceRegions ?? 40000;
+  const deliveryFreeThresholdRegions = settings?.deliveryFreeThresholdRegions ?? 1000000;
+
   const subtotalPrice = cartItems.reduce((acc, it) => acc + it.price * it.quantity, 0);
   const deliveryFee =
     deliveryType === "pickup"
       ? 0
       : deliveryRegion === "tashkent"
-      ? subtotalPrice >= 500000
+      ? subtotalPrice >= deliveryFreeThresholdTashkent
         ? 0
-        : 30000
-      : subtotalPrice >= 1000000
+        : deliveryPriceTashkent
+      : subtotalPrice >= deliveryFreeThresholdRegions
       ? 0
-      : 40000;
+      : deliveryPriceRegions;
   const totalPrice = subtotalPrice + deliveryFee;
   const totalQuantity = cartItems.reduce((acc, it) => acc + it.quantity, 0);
 
@@ -751,7 +756,7 @@ export default function CartPage() {
                         >
                           <span className="font-black text-xs">{isRu ? "г. Ташкент" : "Toshkent shahri"}</span>
                           <span className="text-[10px] text-slate-500 font-normal">
-                            {subtotalPrice >= 500000 ? (isRu ? "Бесплатно" : "Bepul") : "30 000 so'm"}
+                            {subtotalPrice >= deliveryFreeThresholdTashkent ? (isRu ? "Бесплатно" : "Bepul") : formatUzbekCurrency(deliveryPriceTashkent)}
                           </span>
                         </button>
                         <button
@@ -765,7 +770,7 @@ export default function CartPage() {
                         >
                           <span className="font-black text-xs">{isRu ? "По регионам (Узб)" : "Viloyatlar bo'ylab"}</span>
                           <span className="text-[10px] text-slate-500 font-normal">
-                            {subtotalPrice >= 1000000 ? (isRu ? "Бесплатно" : "Bepul") : "40 000 so'm"}
+                            {subtotalPrice >= deliveryFreeThresholdRegions ? (isRu ? "Бесплатно" : "Bepul") : formatUzbekCurrency(deliveryPriceRegions)}
                           </span>
                         </button>
                       </div>
@@ -775,20 +780,20 @@ export default function CartPage() {
                       <Truck className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
                       <span>
                         {deliveryRegion === "tashkent"
-                          ? subtotalPrice >= 500000
+                          ? subtotalPrice >= deliveryFreeThresholdTashkent
                             ? isRu
-                              ? "Бесплатная доставка по Ташкенту курьером (при заказе от 500 000 сум)"
-                              : "Toshkent bo'ylab bepul kuryer orqali yetkaziladi (500 000 so'mdan yuqori)"
+                              ? `Бесплатная доставка по Ташкенту курьером (от ${formatUzbekCurrency(deliveryFreeThresholdTashkent)})`
+                              : `Toshkent bo'ylab bepul kuryer orqali yetkaziladi (${formatUzbekCurrency(deliveryFreeThresholdTashkent)} dan yuqori)`
                             : isRu
-                            ? "Доставка по Ташкенту: 30 000 сум (Бесплатно от 500 000 сум)"
-                            : "Toshkent bo'ylab yetkazish: 30 000 so'm (500 000 so'mdan bepul)"
-                          : subtotalPrice >= 1000000
+                            ? `Доставка по Ташкенту: ${formatUzbekCurrency(deliveryPriceTashkent)} (Бесплатно от ${formatUzbekCurrency(deliveryFreeThresholdTashkent)})`
+                            : `Toshkent bo'ylab yetkazish: ${formatUzbekCurrency(deliveryPriceTashkent)} (${formatUzbekCurrency(deliveryFreeThresholdTashkent)} dan bepul)`
+                          : subtotalPrice >= deliveryFreeThresholdRegions
                           ? isRu
-                            ? "Бесплатная доставка по всем регионам Узбекистана (от 1 000 000 сум)"
-                            : "O'zbekiston viloyatlari bo'ylab bepul yetkazib berish (1 000 000 so'mdan yuqori)"
+                            ? `Бесплатная доставка по всем регионам Узбекистана (от ${formatUzbekCurrency(deliveryFreeThresholdRegions)})`
+                            : `O'zbekiston viloyatlari bo'ylab bepul yetkazib berish (${formatUzbekCurrency(deliveryFreeThresholdRegions)} dan yuqori)`
                           : isRu
-                          ? "Доставка по регионам Узбекистана: 40 000 сум (Бесплатно от 1 000 000 сум)"
-                          : "Viloyatlar bo'ylab yetkazish narxi: 40 000 so'm (1 000 000 so'mdan bepul)"}
+                          ? `Доставка по регионам Узбекистана: ${formatUzbekCurrency(deliveryPriceRegions)} (Бесплатно от ${formatUzbekCurrency(deliveryFreeThresholdRegions)})`
+                          : `Viloyatlar bo'ylab yetkazish narxi: ${formatUzbekCurrency(deliveryPriceRegions)} (${formatUzbekCurrency(deliveryFreeThresholdRegions)} dan bepul)`}
                       </span>
                     </div>
 

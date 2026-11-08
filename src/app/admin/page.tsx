@@ -74,7 +74,7 @@ export default function AdminPage() {
   const [lang, setLang] = useState<Language>("uz");
   const [isDarkTheme, setIsDarkTheme] = useState(false); // Image 1 is Dark, Image 3 is Light
   const [activeMenu, setActiveMenu] = useState<
-    "dashboard" | "products" | "orders" | "customers" | "payment" | "branches" | "security" | "profile"
+    "dashboard" | "products" | "orders" | "customers" | "payment" | "tariffs" | "branches" | "security" | "profile"
   >("dashboard");
   const [viewLayout, setViewLayout] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
@@ -160,6 +160,36 @@ export default function AdminPage() {
   const [newImageUrlInput, setNewImageUrlInput] = useState("");
   const [customSizeInput, setCustomSizeInput] = useState("");
   const [activePaymentCardTab, setActivePaymentCardTab] = useState<"card1" | "card2">("card1");
+
+  // Tariffs & Discounts State (Adjustable by Admin)
+  const [deliveryPriceTashkentInput, setDeliveryPriceTashkentInput] = useState<number>(30000);
+  const [deliveryFreeTashkentInput, setDeliveryFreeTashkentInput] = useState<number>(500000);
+  const [deliveryPriceRegionsInput, setDeliveryPriceRegionsInput] = useState<number>(40000);
+  const [deliveryFreeRegionsInput, setDeliveryFreeRegionsInput] = useState<number>(1000000);
+  const [comboDiscountInput, setComboDiscountInput] = useState<number>(10);
+  const [globalPromoDiscountInput, setGlobalPromoDiscountInput] = useState<number>(0);
+
+  useEffect(() => {
+    if (settings) {
+      setDeliveryPriceTashkentInput(settings.deliveryPriceTashkent ?? 30000);
+      setDeliveryFreeTashkentInput(settings.deliveryFreeThresholdTashkent ?? 500000);
+      setDeliveryPriceRegionsInput(settings.deliveryPriceRegions ?? 40000);
+      setDeliveryFreeRegionsInput(settings.deliveryFreeThresholdRegions ?? 1000000);
+      setComboDiscountInput(settings.comboDiscountPercent ?? 10);
+      setGlobalPromoDiscountInput(settings.globalPromoDiscountPercent ?? 0);
+    }
+  }, [settings]);
+
+  const handleSaveTariffsAndDiscounts = async () => {
+    await handleSaveSettings({
+      deliveryPriceTashkent: Number(deliveryPriceTashkentInput) || 0,
+      deliveryFreeThresholdTashkent: Number(deliveryFreeTashkentInput) || 0,
+      deliveryPriceRegions: Number(deliveryPriceRegionsInput) || 0,
+      deliveryFreeThresholdRegions: Number(deliveryFreeRegionsInput) || 0,
+      comboDiscountPercent: Math.min(100, Math.max(0, Number(comboDiscountInput) || 0)),
+      globalPromoDiscountPercent: Math.min(100, Math.max(0, Number(globalPromoDiscountInput) || 0)),
+    });
+  };
 
   // Logo upload state
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -1188,6 +1218,19 @@ export default function AdminPage() {
                   <span>{t.menu.payment}</span>
                 </button>
 
+                {/* 6. Dastavka & Chegirmalar */}
+                <button
+                  onClick={() => { setActiveMenu("tariffs"); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs transition-all cursor-pointer ${
+                    activeMenu === "tariffs"
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25"
+                      : isDark ? "text-slate-300 hover:bg-white/5" : "text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  <Truck className="w-4 h-4" />
+                  <span>{lang === "ru" ? "Доставка & Скидки" : "Dastavka & Chegirmalar"}</span>
+                </button>
+
                 {/* 6. Filiallar */}
                 <button
                   onClick={() => { setActiveMenu("branches"); setMobileMenuOpen(false); }}
@@ -1410,6 +1453,24 @@ export default function AdminPage() {
             >
               <CreditCard className="w-4 h-4" />
               <span>{t.menu.payment}</span>
+            </button>
+
+            {/* 6. Dastavka & Chegirmalar */}
+            <button
+              onClick={() => {
+                setActiveMenu("tariffs");
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs transition-all cursor-pointer ${
+                activeMenu === "tariffs"
+                  ? (isDark ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 font-bold border border-blue-400/30" : "bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold shadow-md shadow-blue-500/25")
+                  : isDark
+                  ? "text-zinc-400 hover:text-white hover:bg-white/5"
+                  : "text-slate-600 hover:text-blue-600 hover:bg-blue-50/70"
+              }`}
+            >
+              <Truck className="w-4 h-4" />
+              <span>{lang === "ru" ? "Доставка & Скидки" : "Dastavka & Chegirmalar"}</span>
             </button>
 
             {/* 6. Filiallar */}
@@ -3353,6 +3414,306 @@ export default function AdminPage() {
         )}
 
         {/* =========================================================================
+            SECTION 5B: TARIFFS & DISCOUNTS (ADJUSTABLE BY ADMIN)
+           ========================================================================= */}
+        {activeMenu === "tariffs" && (
+          <div className={`p-5 sm:p-6 rounded-3xl ${cardBgClass} border space-y-6 relative z-10`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className={`font-bold text-base sm:text-lg flex items-center gap-2 ${headingTextClass}`}>
+                  <Truck className="w-5 h-5 text-blue-500" />
+                  <span>{lang === "ru" ? "Управление тарифами доставки и скидками" : "Dastavka narxlari va chegirmalar boshqaruvi"}</span>
+                </h2>
+                <p className={`text-xs ${subTextClass} mt-0.5`}>
+                  {lang === "ru"
+                    ? "Укажите стоимость доставки для Ташкента и регионов, порог бесплатной доставки и процент скидок"
+                    : "Toshkent shahri va viloyatlar uchun yetkazib berish narxlari, bepul dastavka chegarasi hamda chegirmalarni belgilang"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleSaveTariffsAndDiscounts}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/25 transition-all cursor-pointer active:scale-95"
+              >
+                <Save className="w-4 h-4" />
+                <span>{loading ? (lang === "ru" ? "Сохранение..." : "Saqlanmoqda...") : (lang === "ru" ? "Сохранить изменения" : "O'zgarishlarni saqlash")}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Card 1: Toshkent shahri bo'ylab yetkazib berish */}
+              <div className={`p-5 rounded-2xl ${itemCardBg} border space-y-4`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-xs">
+                      🏢
+                    </span>
+                    <div>
+                      <h3 className={`font-bold text-xs sm:text-sm ${headingTextClass}`}>
+                        {lang === "ru" ? "Доставка по Ташкенту" : "Toshkent shahri bo'ylab"}
+                      </h3>
+                      <p className={`text-[11px] ${subTextClass}`}>
+                        {lang === "ru" ? "Тариф курьерской доставки по столице" : "Toshkent shahar ichida yetkazib berish shartlari"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500">
+                    Toshkent
+                  </span>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${subTextClass}`}>
+                      {lang === "ru" ? "Стоимость доставки (сум)" : "Yetkazib berish narxi (so'm)"}
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={5000}
+                      value={deliveryPriceTashkentInput}
+                      onChange={(e) => setDeliveryPriceTashkentInput(Number(e.target.value) || 0)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono font-bold ${inputBgClass} focus:outline-none focus:ring-2 focus:ring-blue-500/40`}
+                      placeholder="30000"
+                    />
+                    <p className="text-[10px] text-zinc-400 mt-1">
+                      {lang === "ru" ? "Стандартная плата: " : "Amaldagi standart narx: "}
+                      <b className="text-blue-500 font-mono">{formatUzbekCurrency(deliveryPriceTashkentInput)}</b>
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${subTextClass}`}>
+                      {lang === "ru" ? "Порог бесплатной доставки (сум)" : "Bepul yetkazib berish chegarasi (so'm)"}
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={50000}
+                      value={deliveryFreeTashkentInput}
+                      onChange={(e) => setDeliveryFreeTashkentInput(Number(e.target.value) || 0)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono font-bold ${inputBgClass} focus:outline-none focus:ring-2 focus:ring-blue-500/40`}
+                      placeholder="500000"
+                    />
+                    <p className="text-[10px] text-zinc-400 mt-1">
+                      {lang === "ru"
+                        ? `Заказ от ${formatUzbekCurrency(deliveryFreeTashkentInput)} доставляется бесплатно`
+                        : `Buyurtma summasi ${formatUzbekCurrency(deliveryFreeTashkentInput)} dan oshganda dastavka bepul bo'ladi`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Viloyatlar bo'ylab yetkazib berish */}
+              <div className={`p-5 rounded-2xl ${itemCardBg} border space-y-4`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center font-bold text-xs">
+                      🚚
+                    </span>
+                    <div>
+                      <h3 className={`font-bold text-xs sm:text-sm ${headingTextClass}`}>
+                        {lang === "ru" ? "Доставка по регионам Узбекистана" : "O'zbekiston viloyatlari bo'ylab"}
+                      </h3>
+                      <p className={`text-[11px] ${subTextClass}`}>
+                        {lang === "ru" ? "Почтовая или курьерская доставка в регионы" : "Barcha viloyatlar va Qoraqalpog'iston Respublikasiga"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-500">
+                    Viloyatlar
+                  </span>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${subTextClass}`}>
+                      {lang === "ru" ? "Стоимость доставки в регионы (сум)" : "Viloyatlarga yetkazib berish narxi (so'm)"}
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={5000}
+                      value={deliveryPriceRegionsInput}
+                      onChange={(e) => setDeliveryPriceRegionsInput(Number(e.target.value) || 0)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono font-bold ${inputBgClass} focus:outline-none focus:ring-2 focus:ring-purple-500/40`}
+                      placeholder="40000"
+                    />
+                    <p className="text-[10px] text-zinc-400 mt-1">
+                      {lang === "ru" ? "Стандартная плата: " : "Amaldagi viloyat narxi: "}
+                      <b className="text-purple-500 font-mono">{formatUzbekCurrency(deliveryPriceRegionsInput)}</b>
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${subTextClass}`}>
+                      {lang === "ru" ? "Порог бесплатной доставки в регионы (сум)" : "Viloyatlarga bepul yetkazish chegarasi (so'm)"}
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={50000}
+                      value={deliveryFreeRegionsInput}
+                      onChange={(e) => setDeliveryFreeRegionsInput(Number(e.target.value) || 0)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono font-bold ${inputBgClass} focus:outline-none focus:ring-2 focus:ring-purple-500/40`}
+                      placeholder="1000000"
+                    />
+                    <p className="text-[10px] text-zinc-400 mt-1">
+                      {lang === "ru"
+                        ? `Заказ от ${formatUzbekCurrency(deliveryFreeRegionsInput)} доставляется бесплатно`
+                        : `Buyurtma summasi ${formatUzbekCurrency(deliveryFreeRegionsInput)} dan oshganda viloyatga ham bepul`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Combo / Lookbook chegirmasi */}
+              <div className={`p-5 rounded-2xl ${itemCardBg} border space-y-4`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xs">
+                      ✨
+                    </span>
+                    <div>
+                      <h3 className={`font-bold text-xs sm:text-sm ${headingTextClass}`}>
+                        {lang === "ru" ? "Скидка на комбо-образы (Lookbook / AI)" : "Combo to'plam chegirmasi (AI & Lookbook)"}
+                      </h3>
+                      <p className={`text-[11px] ${subTextClass}`}>
+                        {lang === "ru" ? "Автоматическая скидка при покупке полного комплекта" : "To'liq kiyim to'plamini (obraz) birgalikda olgandagi chegirma"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">
+                    Combo %
+                  </span>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${subTextClass}`}>
+                      {lang === "ru" ? "Процент скидки (%)" : "Chegirma foizi (%)"}
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={comboDiscountInput}
+                        onChange={(e) => setComboDiscountInput(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                        className={`w-32 px-3.5 py-2.5 rounded-xl border text-sm font-mono font-bold ${inputBgClass} focus:outline-none focus:ring-2 focus:ring-emerald-500/40`}
+                        placeholder="10"
+                      />
+                      <span className="font-bold text-base font-mono text-emerald-500">
+                        {comboDiscountInput}% OFF
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 mt-1">
+                      {lang === "ru"
+                        ? "Клиент видит эту скидку в разделе 'AI Stylist / Lookbook' при оформлении сета"
+                        : "Xaridor 'AI Stylist / Lookbook' bo'limida tayyor kiyim to'plamiga aynan shu foizda chegirma oladi"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Umumiy do'kon aksiyasi / Promokod */}
+              <div className={`p-5 rounded-2xl ${itemCardBg} border space-y-4`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xs">
+                      🏷️
+                    </span>
+                    <div>
+                      <h3 className={`font-bold text-xs sm:text-sm ${headingTextClass}`}>
+                        {lang === "ru" ? "Общая скидка акции магазина (%)" : "Umumiy aksiya chegirmasi (%)"}
+                      </h3>
+                      <p className={`text-[11px] ${subTextClass}`}>
+                        {lang === "ru" ? "Глобальная скидка на весь ассортимент (0 = отключено)" : "Butun do'konga qo'shimcha umumiy aksiya (0 = chegirmasiz)"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500">
+                    Aksiya %
+                  </span>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${subTextClass}`}>
+                      {lang === "ru" ? "Глобальный процент скидки (%)" : "Umumiy do'kon chegirmasi (%)"}
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={globalPromoDiscountInput}
+                        onChange={(e) => setGlobalPromoDiscountInput(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                        className={`w-32 px-3.5 py-2.5 rounded-xl border text-sm font-mono font-bold ${inputBgClass} focus:outline-none focus:ring-2 focus:ring-amber-500/40`}
+                        placeholder="0"
+                      />
+                      <span className="font-bold text-base font-mono text-amber-500">
+                        {globalPromoDiscountInput}%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 mt-1">
+                      {globalPromoDiscountInput > 0
+                        ? (lang === "ru" ? `Включена скидка ${globalPromoDiscountInput}% на сайте` : `Hozir saytda ${globalPromoDiscountInput}% umumiy aksiya faol`)
+                        : (lang === "ru" ? "Глобальная скидка выключена (0%)" : "Umumiy aksiya o'chirilgan (0%)")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Summary Preview Box */}
+            <div className={`p-4 rounded-2xl border text-xs space-y-2 ${itemCardBg}`}>
+              <span className={`font-bold block ${headingTextClass}`}>
+                📋 {lang === "ru" ? "Предварительный просмотр тарифов для покупателя:" : "Mijoz savatchasida ko'rinadigan amaldagi shartlar:"}
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-zinc-400">
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-white/5">
+                  <span className="block font-bold text-slate-800 dark:text-zinc-200 mb-1">🏢 Toshkent shahri:</span>
+                  <div>Yetkazish: <b className="text-blue-500 font-mono">{formatUzbekCurrency(deliveryPriceTashkentInput)}</b></div>
+                  <div>Bepul chegarasi: <b className="text-emerald-500 font-mono">{formatUzbekCurrency(deliveryFreeTashkentInput)}</b></div>
+                </div>
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-white/5">
+                  <span className="block font-bold text-slate-800 dark:text-zinc-200 mb-1">🚚 Viloyatlar:</span>
+                  <div>Yetkazish: <b className="text-purple-500 font-mono">{formatUzbekCurrency(deliveryPriceRegionsInput)}</b></div>
+                  <div>Bepul chegarasi: <b className="text-emerald-500 font-mono">{formatUzbekCurrency(deliveryFreeRegionsInput)}</b></div>
+                </div>
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-white/5">
+                  <span className="block font-bold text-slate-800 dark:text-zinc-200 mb-1">✨ Chegirmalar:</span>
+                  <div>Combo to'plam: <b className="text-emerald-500 font-mono">{comboDiscountInput}%</b></div>
+                  <div>Umumiy aksiya: <b className="text-amber-500 font-mono">{globalPromoDiscountInput}%</b></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Save Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleSaveTariffsAndDiscounts}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/25 cursor-pointer active:scale-98 flex items-center justify-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                <span>
+                  {loading
+                    ? (lang === "ru" ? "Сохранение..." : "Saqlanmoqda...")
+                    : (lang === "ru" ? "💾 Сохранить тарифы и проценты скидок" : "💾 Barcha tariflar va chegirma foizlarini saqlash")}
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
             SECTION 6: BRANCHES (4 LOCATIONS IN TASHKENT)
            ========================================================================= */}
         {activeMenu === "branches" && (
@@ -5202,22 +5563,22 @@ export default function AdminPage() {
           >
             <div className="relative">
               <Menu className={`w-5 h-5 transition-colors ${
-                mobileMenuOpen || ["payment", "branches", "security", "profile"].includes(activeMenu)
+                mobileMenuOpen || ["payment", "tariffs", "branches", "security", "profile"].includes(activeMenu)
                   ? "text-blue-600"
                   : "text-zinc-400"
               }`} />
-              {(mobileMenuOpen || ["payment", "branches", "security", "profile"].includes(activeMenu)) && (
+              {(mobileMenuOpen || ["payment", "tariffs", "branches", "security", "profile"].includes(activeMenu)) && (
                 <span className="w-2 h-2 rounded-full bg-blue-500 absolute -top-0.5 -right-0.5" />
               )}
             </div>
             <span className={`text-[9px] sm:text-[10px] font-bold tracking-tight ${
-              mobileMenuOpen || ["payment", "branches", "security", "profile"].includes(activeMenu)
+              mobileMenuOpen || ["payment", "tariffs", "branches", "security", "profile"].includes(activeMenu)
                 ? "text-blue-600"
                 : "text-zinc-400"
             }`}>
               Menyu
             </span>
-            {(mobileMenuOpen || ["payment", "branches", "security", "profile"].includes(activeMenu)) && (
+            {(mobileMenuOpen || ["payment", "tariffs", "branches", "security", "profile"].includes(activeMenu)) && (
               <span className="w-5 h-0.5 rounded-full bg-blue-500 absolute -bottom-1" />
             )}
           </button>

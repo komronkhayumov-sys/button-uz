@@ -150,16 +150,23 @@ export const OrderModal: React.FC<OrderModalProps> = ({
   const productName = lang === "ru" && product.nameRu ? product.nameRu : product.name;
   const productDesc = lang === "ru" && product.descriptionRu ? product.descriptionRu : product.description;
   const subtotalPrice = product.price * quantity;
+
+  // Delivery Pricing (Adjustable by Admin)
+  const deliveryPriceTashkent = settings?.deliveryPriceTashkent ?? 30000;
+  const deliveryFreeThresholdTashkent = settings?.deliveryFreeThresholdTashkent ?? 500000;
+  const deliveryPriceRegions = settings?.deliveryPriceRegions ?? 40000;
+  const deliveryFreeThresholdRegions = settings?.deliveryFreeThresholdRegions ?? 1000000;
+
   const deliveryFee =
     deliveryType === "pickup"
       ? 0
       : deliveryRegion === "tashkent"
-      ? subtotalPrice >= 500000
+      ? subtotalPrice >= deliveryFreeThresholdTashkent
         ? 0
-        : 30000
-      : subtotalPrice >= 1000000
+        : deliveryPriceTashkent
+      : subtotalPrice >= deliveryFreeThresholdRegions
       ? 0
-      : 40000;
+      : deliveryPriceRegions;
   const totalPrice = subtotalPrice + deliveryFee;
 
   // Compile up to 10 gallery photos
@@ -1096,7 +1103,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
                     >
                       <div>{isUz ? "Toshkent shahri" : "Ташкент"}</div>
                       <div className="text-[10px] font-normal opacity-75">
-                        {subtotalPrice >= 500000 ? (isUz ? "Bepul" : "Бесплатно") : "30 000 so'm"}
+                        {subtotalPrice >= deliveryFreeThresholdTashkent ? (isUz ? "Bepul" : "Бесплатно") : formatUzbekCurrency(deliveryPriceTashkent)}
                       </div>
                     </button>
                     <button
@@ -1110,7 +1117,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
                     >
                       <div>{isUz ? "Viloyatlar bo'ylab" : "По регионам"}</div>
                       <div className="text-[10px] font-normal opacity-75">
-                        {subtotalPrice >= 1000000 ? (isUz ? "Bepul" : "Бесплатно") : "40 000 so'm"}
+                        {subtotalPrice >= deliveryFreeThresholdRegions ? (isUz ? "Bepul" : "Бесплатно") : formatUzbekCurrency(deliveryPriceRegions)}
                       </div>
                     </button>
                   </div>

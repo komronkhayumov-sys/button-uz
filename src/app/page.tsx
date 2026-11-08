@@ -473,6 +473,7 @@ export default function HomePage() {
           <AiModeSection
             products={products}
             lang={lang}
+            settings={settings}
             onAddToCart={handleAddToCart}
             onSelectProduct={handleOpenProduct}
             onOrderOutfit={handleOrderOutfit}
