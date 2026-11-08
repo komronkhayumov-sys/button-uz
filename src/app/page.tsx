@@ -287,6 +287,20 @@ export default function HomePage() {
     } catch (e) {}
   };
 
+  const handleLogoutCustomer = () => {
+    setCustomer(null);
+    setCustomerOrders([]);
+    try {
+      localStorage.removeItem("button_customer");
+      localStorage.removeItem("button_customer_phone");
+      localStorage.removeItem("button_customer_orders");
+    } catch (e) {}
+    showToast(
+      lang === "uz" ? "Profildan chiqildi" : "Вы вышли из профиля",
+      "success"
+    );
+  };
+
   const handleLanguageChange = (newLang: Language) => {
     setLang(newLang);
     try {
@@ -508,6 +522,7 @@ export default function HomePage() {
             initialSubView={profileInitialSubView}
             onLanguageChange={handleLanguageChange}
             onSaveCustomer={handleSaveCustomer}
+            onLogoutCustomer={handleLogoutCustomer}
             onSelectProduct={handleOpenProduct}
             onViewCatalog={() => handleViewCatalog()}
             onAddToCart={handleAddToCart}

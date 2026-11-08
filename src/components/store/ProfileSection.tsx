@@ -29,6 +29,8 @@ import {
   Info,
   Check,
   AlertCircle,
+  LogOut,
+  UserPlus,
 } from "lucide-react";
 import { Customer, CustomerMeasurements, Language, Order, Product } from "@/types";
 import { formatUzbekCurrency } from "@/lib/format";
@@ -42,6 +44,7 @@ interface ProfileSectionProps {
   lang: Language;
   onLanguageChange: (lang: Language) => void;
   onSaveCustomer: (updated: Customer) => void;
+  onLogoutCustomer?: () => void;
   onSelectProduct: (p: Product) => void;
   onViewCatalog: () => void;
   onAddToCart?: (product: Product, size?: string, color?: string) => void;
@@ -67,6 +70,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   lang,
   onLanguageChange,
   onSaveCustomer,
+  onLogoutCustomer,
   onSelectProduct,
   onViewCatalog,
   onAddToCart,
@@ -102,31 +106,58 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
   // Order filter state matching Mockup Screen 6: Barchasi, Kutilmoqda, Yetkazilmoqda, Yakunlandi
   const [orderFilter, setOrderFilter] = useState<OrderFilterStatus>("all");
 
-  // Edit form state & field validation (Phase 13)
-  const [editName, setEditName] = useState(customer?.name || "Vali");
-  const [editPhone, setEditPhone] = useState(customer?.phone || "+998 90 050 08 98");
-  const [editAddress, setEditAddress] = useState(customer?.address || "Toshkent sh., Chilonzor-16");
+  // Edit form state & field validation (clean empty defaults for guest)
+  const [editName, setEditName] = useState(customer?.name || "");
+  const [editPhone, setEditPhone] = useState(customer?.phone || "+998 ");
+  const [editAddress, setEditAddress] = useState(customer?.address || "");
   const [profileErrors, setProfileErrors] = useState<{ name?: string; phone?: string; address?: string }>({});
 
   // Measurements state
-  const [height, setHeight] = useState<number>(customer?.measurements?.height || 178);
-  const [weight, setWeight] = useState<number>(customer?.measurements?.weight || 75);
-  const [chest, setChest] = useState<number>(customer?.measurements?.chest || 102);
-  const [waist, setWaist] = useState<number>(customer?.measurements?.waist || 84);
-  const [hips, setHips] = useState<number>(customer?.measurements?.hips || 98);
-  const [standardSize, setStandardSize] = useState<string>(customer?.measurements?.standardSize || "L");
+  const [height, setHeight] = useState<number>(customer?.measurements?.height || 0);
+  const [weight, setWeight] = useState<number>(customer?.measurements?.weight || 0);
+  const [chest, setChest] = useState<number>(customer?.measurements?.chest || 0);
+  const [waist, setWaist] = useState<number>(customer?.measurements?.waist || 0);
+  const [hips, setHips] = useState<number>(customer?.measurements?.hips || 0);
+  const [standardSize, setStandardSize] = useState<string>(
+    customer?.measurements?.standardSize || customer?.preferredSize || "L"
+  );
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
 
   // Saved AI Looks
   const [savedOutfits, setSavedOutfits] = useState<any[]>([]);
 
   // Saved addresses list & validation
-  const [savedAddresses, setSavedAddresses] = useState<string[]>([
-    customer?.address || "Toshkent sh., Chilonzor tumani, 16-mavze, 24-uy",
-  ]);
+  const [savedAddresses, setSavedAddresses] = useState<string[]>(
+    customer?.address ? [customer.address] : []
+  );
   const [newAddressInput, setNewAddressInput] = useState("");
   const [newAddressError, setNewAddressError] = useState<string | null>(null);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+
+  // Synchronize state when customer prop changes (login / logout / reload)
+  useEffect(() => {
+    setEditName(customer?.name || "");
+    setEditPhone(customer?.phone || "+998 ");
+    setEditAddress(customer?.address || "");
+    if (customer?.measurements) {
+      setHeight(customer.measurements.height || 0);
+      setWeight(customer.measurements.weight || 0);
+      setChest(customer.measurements.chest || 0);
+      setWaist(customer.measurements.waist || 0);
+      setHips(customer.measurements.hips || 0);
+      setStandardSize(customer.measurements.standardSize || customer.preferredSize || "L");
+    } else {
+      setHeight(0);
+      setWeight(0);
+      setChest(0);
+      setWaist(0);
+      setHips(0);
+      setStandardSize(customer?.preferredSize || "L");
+    }
+    if (customer?.address) {
+      setSavedAddresses((prev) => (prev.includes(customer.address!) ? prev : [customer.address!, ...prev]));
+    }
+  }, [customer]);
 
   useEffect(() => {
     try {
@@ -430,35 +461,82 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
       {/* 1. Profile Header Card matching Mockup Screen 5 */}
       <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_4px_20px_rgba(37,99,235,0.06)] dark:shadow-xl">
         <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-          {/* Avatar Circle matching Mockup Screen 5 */}
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#2563EB] to-blue-400 text-white flex items-center justify-center text-xl sm:text-2xl font-black shadow-lg shadow-blue-500/20">
-            {customer?.name ? customer.name.slice(0, 2).toUpperCase() : "VL"}
+          {/* Avatar Circle */}
+          <div
+            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-xl sm:text-2xl font-black shadow-lg ${
+              customer?.name
+                ? "bg-gradient-to-tr from-[#2563EB] to-blue-400 text-white shadow-blue-500/20"
+                : "bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 shadow-inner"
+            }`}
+          >
+            {customer?.name ? (
+              customer.name.slice(0, 2).toUpperCase()
+            ) : (
+              <User className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400 dark:text-slate-500" />
+            )}
           </div>
 
           <div className="space-y-1">
-            <h2 className="text-lg sm:text-xl font-black text-[#0F172A] dark:text-white">
-              {customer?.name || "Vali"}
-            </h2>
+            <div className="flex items-center justify-center sm:justify-start gap-2">
+              <h2 className="text-lg sm:text-xl font-black text-[#0F172A] dark:text-white">
+                {customer?.name || (isUz ? "Mehmon" : "Гость")}
+              </h2>
+              {!customer?.name && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#2563EB] dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
+                  {isUz ? "Yangi foydalanuvchi" : "Новый пользователь"}
+                </span>
+              )}
+            </div>
             <p className="text-xs sm:text-sm font-mono text-[#64748B] dark:text-slate-400">
-              {customer?.phone || "+998 90 050 08 98"}
+              {customer?.phone || (isUz ? "Telefon raqami kiritilmagan" : "Номер телефона не указан")}
             </p>
-            {customer?.address && (
+            {customer?.address ? (
               <p className="text-xs text-[#64748B] dark:text-slate-400 flex items-center justify-center sm:justify-start gap-1">
                 <MapPin className="w-3.5 h-3.5 text-[#2563EB]" />
                 <span>{customer.address}</span>
+              </p>
+            ) : (
+              <p className="text-[11px] text-[#94A3B8] dark:text-slate-500">
+                {isUz ? "Buyurtmalarni boshqarish uchun profilingizni to'ldiring" : "Заполните данные для управления заказами"}
               </p>
             )}
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsEditingProfile(!isEditingProfile)}
-          className="px-5 py-2.5 rounded-2xl bg-[#F1F5F9] dark:bg-[#1e293b] hover:bg-[#E2E8F0] dark:hover:bg-slate-700 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs"
-        >
-          <Edit3 className="w-3.5 h-3.5 text-violet-700 dark:text-violet-400" />
-          <span>{isUz ? "Profilni tahrirlash" : "Редактировать профиль"}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsEditingProfile(!isEditingProfile)}
+            className={`px-5 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
+              customer?.name
+                ? "bg-[#F1F5F9] dark:bg-[#1e293b] hover:bg-[#E2E8F0] dark:hover:bg-slate-700 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white"
+                : "bg-[#2563EB] hover:bg-blue-600 text-white shadow-md shadow-blue-500/25"
+            }`}
+          >
+            {customer?.name ? (
+              <>
+                <Edit3 className="w-3.5 h-3.5 text-violet-700 dark:text-violet-400" />
+                <span>{isUz ? "Profilni tahrirlash" : "Редактировать профиль"}</span>
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-3.5 h-3.5 text-white" />
+                <span>{isUz ? "Profilni to'ldirish" : "Заполнить профиль"}</span>
+              </>
+            )}
+          </button>
+
+          {customer && onLogoutCustomer && (
+            <button
+              type="button"
+              onClick={onLogoutCustomer}
+              title={isUz ? "Chiqish" : "Выйти"}
+              className="p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-800/40 text-rose-600 dark:text-rose-400 text-xs font-bold transition-all cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {saveSuccessMsg && (
@@ -476,7 +554,11 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
         >
           <h3 className="font-bold text-sm text-[#0F172A] dark:text-white flex items-center gap-2">
             <User className="w-4 h-4 text-[#2563EB]" />
-            <span>{isUz ? "Shaxsiy ma'lumotlarni yangilash" : "Обновление личных данных"}</span>
+            <span>
+              {customer?.name
+                ? isUz ? "Shaxsiy ma'lumotlarni yangilash" : "Обновление личных данных"
+                : isUz ? "Profil ma'lumotlarini kiritish" : "Заполнение данных профиля"}
+            </span>
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -487,6 +569,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               <input
                 type="text"
                 value={editName}
+                placeholder={isUz ? "Ism va familiyangizni kiriting" : "Введите имя и фамилию"}
                 onChange={(e) => {
                   setEditName(e.target.value);
                   if (profileErrors.name) setProfileErrors((p) => ({ ...p, name: undefined }));
@@ -512,8 +595,11 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               <input
                 type="tel"
                 value={editPhone}
+                placeholder="+998 90 123 45 67"
                 onChange={(e) => {
-                  setEditPhone(e.target.value);
+                  let val = e.target.value;
+                  if (!val.startsWith("+998") && val.trim().length > 0) val = "+998 " + val.replace(/^\+?/, "");
+                  setEditPhone(val);
                   if (profileErrors.phone) setProfileErrors((p) => ({ ...p, phone: undefined }));
                 }}
                 className={`w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#1e293b] border text-xs text-[#0F172A] dark:text-white font-mono focus:outline-none transition-colors ${
@@ -538,7 +624,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
                 type="text"
                 value={editAddress}
                 onChange={(e) => setEditAddress(e.target.value)}
-                placeholder={isUz ? "Toshkent sh., Chilonzor..." : "г. Ташкент..."}
+                placeholder={isUz ? "Toshkent sh., Yunusobod..." : "г. Ташкент..."}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 text-xs text-[#0F172A] dark:text-white focus:outline-none focus:border-[#2563EB]"
               />
             </div>
@@ -814,7 +900,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               </label>
               <input
                 type="number"
-                value={height}
+                value={height > 0 ? height : ""}
+                placeholder="178"
                 onChange={(e) => setHeight(Number(e.target.value))}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 text-xs font-mono text-[#0F172A] dark:text-white focus:outline-none focus:border-[#2563EB]"
               />
@@ -826,7 +913,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               </label>
               <input
                 type="number"
-                value={weight}
+                value={weight > 0 ? weight : ""}
+                placeholder="75"
                 onChange={(e) => setWeight(Number(e.target.value))}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 text-xs font-mono text-[#0F172A] dark:text-white focus:outline-none focus:border-[#2563EB]"
               />
@@ -851,11 +939,12 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
 
             <div>
               <label className="text-xs font-bold text-[#64748B] dark:text-slate-400 block mb-1">
-                {isUz ? "Ko'krak aylanasi (sm):" : "Обхват груди (см):"}
+                {isUz ? "Ko'krak aylanasi (sm):" : "Обхvat груди (см):"}
               </label>
               <input
                 type="number"
-                value={chest}
+                value={chest > 0 ? chest : ""}
+                placeholder="102"
                 onChange={(e) => setChest(Number(e.target.value))}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 text-xs font-mono text-[#0F172A] dark:text-white focus:outline-none focus:border-[#2563EB]"
               />
@@ -867,7 +956,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               </label>
               <input
                 type="number"
-                value={waist}
+                value={waist > 0 ? waist : ""}
+                placeholder="84"
                 onChange={(e) => setWaist(Number(e.target.value))}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 text-xs font-mono text-[#0F172A] dark:text-white focus:outline-none focus:border-[#2563EB]"
               />
@@ -879,7 +969,8 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
               </label>
               <input
                 type="number"
-                value={hips}
+                value={hips > 0 ? hips : ""}
+                placeholder="98"
                 onChange={(e) => setHips(Number(e.target.value))}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 text-xs font-mono text-[#0F172A] dark:text-white focus:outline-none focus:border-[#2563EB]"
               />
@@ -1110,28 +1201,39 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             </div>
           )}
 
-          <div className="space-y-2">
-            {savedAddresses.map((addr, idx) => (
-              <div
-                key={idx}
-                className="p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 flex items-center justify-between gap-3"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <MapPin className="w-4 h-4 text-[#2563EB] shrink-0" />
-                  <span className="text-xs text-[#0F172A] dark:text-white truncate">{addr}</span>
+          {savedAddresses.length === 0 ? (
+            <div className="py-8 text-center space-y-2">
+              <MapPin className="w-8 h-8 mx-auto text-[#64748B] dark:text-slate-400 opacity-40" />
+              <p className="text-xs text-[#64748B] dark:text-slate-400">
+                {isUz
+                  ? "Hozircha saqlangan manzillar yo'q. \"Yangi manzil\" tugmasi orqali manzil qo'shing."
+                  : "Пока нет сохраненных адресов. Добавьте адрес через кнопку \"Добавить\"."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {savedAddresses.map((addr, idx) => (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-2xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <MapPin className="w-4 h-4 text-[#2563EB] shrink-0" />
+                    <span className="text-xs text-[#0F172A] dark:text-white truncate">{addr}</span>
+                  </div>
+                  {savedAddresses.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAddress(idx)}
+                      className="p-1 text-[#64748B] dark:text-slate-400 hover:text-rose-500 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-                {savedAddresses.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteAddress(idx)}
-                    className="p-1 text-[#64748B] dark:text-slate-400 hover:text-rose-500 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1241,6 +1343,23 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Profildan chiqish (agar profil to'ldirilgan bo'lsa) */}
+        {customer && onLogoutCustomer && (
+          <button
+            type="button"
+            onClick={onLogoutCustomer}
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-rose-50/70 dark:hover:bg-rose-950/25 transition-colors cursor-pointer group"
+          >
+            <div className="flex items-center gap-3">
+              <LogOut className="w-5 h-5 text-rose-500 group-hover:text-rose-600 transition-colors" />
+              <span className="text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400">
+                {isUz ? "Profildan chiqish" : "Выйти из профиля"}
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-rose-300 dark:text-rose-700 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        )}
       </div>
     </div>
   );
