@@ -28,6 +28,7 @@ import {
 } from "@/types";
 import { DEFAULT_SETTINGS, INITIAL_PRODUCTS } from "@/constants";
 import { formatUzbekCurrency } from "@/lib/format";
+import { getStoreTimeStatus } from "@/lib/time";
 import { X, MapPin, ShoppingBag, ArrowRight, ChevronLeft } from "lucide-react";
 
 export default function HomePage() {
@@ -198,13 +199,13 @@ export default function HomePage() {
   };
 
   // Cart operations
-  const handleAddToCart = (product: Product, size?: string, color?: string) => {
+  const handleAddToCart = (product: Product, size?: string, color?: string, quantity: number = 1) => {
     const chosenSize = size || product.sizes?.[0] || "M";
     const chosenColor = color || (product.colors && product.colors[0]) || "";
     const itemId = `${product.id}-${chosenSize}-${chosenColor}`;
 
     showToast(
-      lang === "uz" ? "Savatga muvaffaqiyatli qo'shildi! 🛒" : "Успешно добавлено в корзину! 🛒",
+      lang === "uz" ? "Savatga muvaffaqiyatli qo'shildi! 🛍️" : "Успешно добавлено в корзину! 🛍️",
       "cart"
     );
 
@@ -213,7 +214,7 @@ export default function HomePage() {
       let next: CartItem[];
       if (existing) {
         next = prev.map((it) =>
-          it.id === itemId ? { ...it, quantity: it.quantity + 1 } : it
+          it.id === itemId ? { ...it, quantity: it.quantity + quantity } : it
         );
       } else {
         next = [
@@ -224,7 +225,7 @@ export default function HomePage() {
             product,
             size: chosenSize,
             color: chosenColor,
-            quantity: 1,
+            quantity,
             price: product.price,
           },
         ];
@@ -444,7 +445,7 @@ export default function HomePage() {
                 </button>
                 <div>
                   <h1 className="text-lg sm:text-xl font-black text-[#0F172A] dark:text-white">
-                    {lang === "uz" ? "Toshkentdagi 4 ta Showroom" : "4 Шоурума в Ташкенте"}
+                    {lang === "uz" ? "Toshkentdagi filiallarimiz" : "Шоурумы в Ташкенте"}
                   </h1>
                   <p className="text-xs text-[#64748B] dark:text-slate-400">
                     {lang === "uz"
@@ -453,9 +454,13 @@ export default function HomePage() {
                   </p>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{lang === "uz" ? "Hozir ochiq" : "Открыто"}</span>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                getStoreTimeStatus(lang).isOpen
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${getStoreTimeStatus(lang).isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                <span>{getStoreTimeStatus(lang).isOpen ? (lang === "uz" ? "Hozir ochiq (10:00 – 23:00)" : "Сейчас открыто") : (lang === "uz" ? "Hozir yopiq" : "Сейчас закрыто")}</span>
               </span>
             </div>
 

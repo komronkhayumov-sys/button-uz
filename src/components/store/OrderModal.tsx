@@ -28,6 +28,7 @@ import { Branch, Language, PaymentMethod, Product, StoreSettings, Order } from "
 import { translations } from "@/lib/i18n";
 import { BRANCHES } from "@/constants";
 import { formatUzbekCurrency } from "@/lib/format";
+import { getStoreTimeStatus } from "@/lib/time";
 import ReceiptUploader from "./ReceiptUploader";
 import SmartSizeCalculator from "./SmartSizeCalculator";
 
@@ -79,6 +80,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
 
   // Checkout form state
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
+  const [deliveryRegion, setDeliveryRegion] = useState<"tashkent" | "regions">("tashkent");
   const branches = settings?.branches && settings.branches.length > 0 ? settings.branches : BRANCHES;
   const [selectedBranchId, setSelectedBranchId] = useState(branches[0]?.id || "beruniy");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("click");
@@ -147,7 +149,18 @@ export const OrderModal: React.FC<OrderModalProps> = ({
   const isUz = lang === "uz";
   const productName = lang === "ru" && product.nameRu ? product.nameRu : product.name;
   const productDesc = lang === "ru" && product.descriptionRu ? product.descriptionRu : product.description;
-  const totalPrice = product.price * quantity;
+  const subtotalPrice = product.price * quantity;
+  const deliveryFee =
+    deliveryType === "pickup"
+      ? 0
+      : deliveryRegion === "tashkent"
+      ? subtotalPrice >= 500000
+        ? 0
+        : 30000
+      : subtotalPrice >= 1000000
+      ? 0
+      : 40000;
+  const totalPrice = subtotalPrice + deliveryFee;
 
   // Compile up to 10 gallery photos
   const galleryImages: string[] = Array.from(
@@ -263,6 +276,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
         customerName,
         customerPhone,
         deliveryType,
+        deliveryRegion: deliveryType === "delivery" ? deliveryRegion : undefined,
         branchId: deliveryType === "pickup" ? selectedBranchId : undefined,
         branchName:
           deliveryType === "pickup"
@@ -270,7 +284,10 @@ export const OrderModal: React.FC<OrderModalProps> = ({
               ? selectedBranch?.name
               : selectedBranch?.nameRu || selectedBranch?.name
             : undefined,
-        address: deliveryType === "delivery" ? addressOrNote : undefined,
+        address:
+          deliveryType === "delivery"
+            ? `${deliveryRegion === "regions" ? "[Viloyatga yetkazish] " : "[Toshkent shahri] "}${addressOrNote}`
+            : undefined,
         comment: addressOrNote,
         paymentMethod,
         paymentStatus: "pending" as const,
@@ -723,9 +740,9 @@ export const OrderModal: React.FC<OrderModalProps> = ({
                       <span className="font-bold text-[#0F172A] dark:text-white">
                         {isUz ? "Toshkent filiallarida mavjud:" : "Наличие в шоурумах Ташкента:"}
                       </span>
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>{isUz ? "Hozir ochiq (10:00 - 23:00)" : "Открыто (10:00 - 23:00)"}</span>
+                      <span className={`text-[10px] font-bold flex items-center gap-1 ${getStoreTimeStatus(lang).isOpen ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${getStoreTimeStatus(lang).isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                        <span>{isUz ? getStoreTimeStatus(lang).statusTextUz : getStoreTimeStatus(lang).statusTextRu}</span>
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
@@ -1042,28 +1059,62 @@ export const OrderModal: React.FC<OrderModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setDeliveryType("delivery")}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       deliveryType === "delivery"
                         ? "border-blue-600 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-xs"
                         : "border-zinc-200 dark:border-slate-800 bg-zinc-50 dark:bg-slate-800/40 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
                     <Truck className="w-4 h-4" />
-                    <span>Yetkazish (Toshkent)</span>
+                    <span>{isUz ? "Yetkazib berish" : "Доставка курьером"}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setDeliveryType("pickup")}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       deliveryType === "pickup"
                         ? "border-blue-600 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-xs"
                         : "border-zinc-200 dark:border-slate-800 bg-zinc-50 dark:bg-slate-800/40 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
                     <Store className="w-4 h-4" />
-                    <span>Filialdan olib ketish</span>
+                    <span>{isUz ? "Filialdan olib ketish" : "Самовывоз"}</span>
                   </button>
                 </div>
+
+                {/* Destination Selector: Toshkent vs Viloyatlar */}
+                {deliveryType === "delivery" && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryRegion("tashkent")}
+                      className={`p-2 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
+                        deliveryRegion === "tashkent"
+                          ? "bg-violet-50 dark:bg-violet-950/40 border-violet-600 text-violet-700 dark:text-violet-300 ring-2 ring-violet-500/30"
+                          : "border-zinc-200 dark:border-slate-800 text-zinc-600 dark:text-zinc-400"
+                      }`}
+                    >
+                      <div>{isUz ? "Toshkent shahri" : "Ташкент"}</div>
+                      <div className="text-[10px] font-normal opacity-75">
+                        {subtotalPrice >= 500000 ? (isUz ? "Bepul" : "Бесплатно") : "30 000 so'm"}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryRegion("regions")}
+                      className={`p-2 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
+                        deliveryRegion === "regions"
+                          ? "bg-violet-50 dark:bg-violet-950/40 border-violet-600 text-violet-700 dark:text-violet-300 ring-2 ring-violet-500/30"
+                          : "border-zinc-200 dark:border-slate-800 text-zinc-600 dark:text-zinc-400"
+                      }`}
+                    >
+                      <div>{isUz ? "Viloyatlar bo'ylab" : "По регионам"}</div>
+                      <div className="text-[10px] font-normal opacity-75">
+                        {subtotalPrice >= 1000000 ? (isUz ? "Bepul" : "Бесплатно") : "40 000 so'm"}
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* If pickup: Choose branch */}

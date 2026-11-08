@@ -21,6 +21,8 @@ import { InstagramIcon } from "@/components/icons";
 import { Customer, Language, Product, StoreSettings } from "@/types";
 import { DEFAULT_SETTINGS, BRANCHES } from "@/constants";
 import { formatUzbekCurrency } from "@/lib/format";
+import { QuickVariationModal } from "./QuickVariationModal";
+import { getStoreTimeStatus } from "@/lib/time";
 
 interface HomeSectionProps {
   lang: Language;
@@ -30,7 +32,7 @@ interface HomeSectionProps {
   wishlistIds: string[];
   onToggleWishlist: (productId: string) => void;
   onSelectProduct: (product: Product, mode?: "detail" | "checkout") => void;
-  onAddToCart: (product: Product, size?: string, color?: string) => void;
+  onAddToCart: (product: Product, size?: string, color?: string, quantity?: number) => void;
   onViewCatalog: (category?: string) => void;
   onOpenAiMode: () => void;
   onOpenBranches: () => void;
@@ -114,14 +116,26 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
     return list;
   }, [products, selectedCategory, searchQuery]);
 
-  // Infinite Scroll & Micro-interaction States
-  const [visibleCount, setVisibleCount] = useState<number>(12);
+  // Quick Variation Modal & Uzbekistan Time Status
+  const [variationProduct, setVariationProduct] = useState<Product | null>(null);
+  const [timeStatus, setTimeStatus] = useState(() => getStoreTimeStatus(lang));
+
+  useEffect(() => {
+    setTimeStatus(getStoreTimeStatus(lang));
+    const timer = setInterval(() => {
+      setTimeStatus(getStoreTimeStatus(lang));
+    }, 20000);
+    return () => clearInterval(timer);
+  }, [lang]);
+
+  // Infinite Scroll & Micro-interaction States (Start with 24 to show all products immediately)
+  const [visibleCount, setVisibleCount] = useState<number>(24);
   const [addedId, setAddedId] = useState<string | null>(null);
   const bottomObserverRef = useRef<HTMLDivElement | null>(null);
 
   // Reset pagination when category or search changes
   useEffect(() => {
-    setVisibleCount(12);
+    setVisibleCount(24);
   }, [selectedCategory, searchQuery]);
 
   // IntersectionObserver to auto-load more items as user scrolls down
@@ -206,12 +220,12 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 className="hover:text-violet-700 dark:hover:text-violet-400 transition-colors cursor-pointer flex items-center gap-1 font-semibold"
               >
                 <MapPin className="w-3 h-3 text-violet-600 dark:text-violet-400" />
-                <span>{isUz ? "Toshkentda 4 ta filial" : "4 филиала в Ташкенте"}</span>
+                <span>{isUz ? "Toshkent filiallari" : "Филиалы в Ташкенте"}</span>
               </button>
               <span>•</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{isUz ? "Hozir ochiq (10:00 – 23:00)" : "Сейчас открыто (10:00 – 23:00)"}</span>
+              <span className={`font-semibold flex items-center gap-1 ${timeStatus.isOpen ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${timeStatus.isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                <span>{isUz ? timeStatus.statusTextUz : timeStatus.statusTextRu}</span>
               </span>
             </div>
           </div>
@@ -470,15 +484,13 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                     </div>
                   </Link>
 
-                  {/* Savatga Button (User directive: Tezkor buyurtma o'rniga Savatga yuborish) */}
+                  {/* Savatga Button (Opens Size Selector & Color Picker Modal) */}
                   <div className="p-3 pt-0">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onAddToCart(p, p.sizes?.[0] || "M", p.colors?.[0] || "");
-                        setAddedId(p.id);
-                        setTimeout(() => setAddedId(null), 1500);
+                        setVariationProduct(p);
                       }}
                       className={`w-full py-2.5 sm:py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer ${
                         isJustAdded
@@ -514,11 +526,29 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
             </p>
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="py-6 text-center text-xs font-bold text-[#64748B] dark:text-slate-400 border-t border-[#E2E8F0] dark:border-slate-800/60 mt-4">
-            {isUz ? `Barcha mahsulotlar ko'rsatildi (${filteredProducts.length} ta)` : `Все товары показаны (${filteredProducts.length})`}
+          <div className="py-6 text-center text-xs font-bold text-[#64748B] dark:text-slate-400 border-t border-[#E2E8F0] dark:border-slate-800/60 mt-4 flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>
+              {isUz
+                ? `Barcha mahsulotlar ko'rsatildi (${filteredProducts.length} ta mahsulot)`
+                : `Все товары показаны (${filteredProducts.length} товаров)`}
+            </span>
           </div>
         ) : null}
       </div>
+
+      {/* Quick Variation Modal (Size Selector & Color Picker) */}
+      <QuickVariationModal
+        product={variationProduct}
+        lang={lang}
+        isOpen={Boolean(variationProduct)}
+        onClose={() => setVariationProduct(null)}
+        onConfirm={(prod, sz, col, qty) => {
+          onAddToCart(prod, sz, col, qty);
+          setAddedId(prod.id);
+          setTimeout(() => setAddedId(null), 1500);
+        }}
+      />
     </div>
   );
 };

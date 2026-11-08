@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Customer, CustomerNavSection, Language, StoreSettings } from "@/types";
 import { translations } from "@/lib/i18n";
+import { getStoreTimeStatus } from "@/lib/time";
 
 interface CustomerNavbarProps {
   lang: Language;
@@ -55,8 +56,19 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
 }) => {
   const isUz = lang === "uz";
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [timeStatus, setTimeStatus] = useState(() => getStoreTimeStatus(lang));
 
-  // Global keyboard shortcut: Command/Ctrl + K to focus search
+  // Dynamic Uzbekistan (UTC+5) Time Checker
+  useEffect(() => {
+    setTimeStatus(getStoreTimeStatus(lang));
+    const timer = setInterval(() => {
+      setTimeStatus(getStoreTimeStatus(lang));
+    }, 20000); // Check every 20s
+    return () => clearInterval(timer);
+  }, [lang]);
+
+  // Global keyboard shortcut: Command/Ctrl + K to focus search (desktop only)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -105,8 +117,14 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-[#64748B] dark:text-slate-400 font-medium leading-none mt-0.5 whitespace-nowrap">
-                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="truncate">{isUz ? "Hozir ochiq (10:00 – 23:00)" : "Сейчас открыто (10:00 – 23:00)"}</span>
+                <span
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 ${
+                    timeStatus.isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                  }`}
+                />
+                <span className="truncate">
+                  {isUz ? timeStatus.statusTextUz : timeStatus.statusTextRu}
+                </span>
               </div>
             </div>
           </button>
@@ -196,6 +214,23 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
 
         {/* Right Actions: Search, Wishlist, Cart, Language, Theme, Shield, Profile */}
         <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Mobile Search Icon Button (Never shows ⌘K on mobile) */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileSearchOpen((prev) => !prev);
+              setTimeout(() => {
+                const el = document.getElementById("mobile-global-search");
+                el?.focus();
+              }, 100);
+            }}
+            className="lg:hidden p-2 rounded-xl text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F1F5F9] dark:hover:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-800 transition-all cursor-pointer shrink-0"
+            title={isUz ? "Qidiruv" : "Поиск"}
+            aria-label="Search"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+
           {/* Desktop Search Field */}
           <div className="hidden lg:flex items-center relative">
             <div
@@ -221,7 +256,7 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
                 placeholder={isUz ? "Qidiruv..." : "Поиск..."}
                 className="bg-transparent border-none text-xs text-[#0F172A] dark:text-white placeholder-[#94A3B8] focus:outline-none w-full"
               />
-              <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[10px] font-mono text-[#94A3B8]">
+              <kbd className="hidden md:inline-block px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[10px] font-mono text-[#94A3B8]">
                 ⌘K
               </kbd>
             </div>
@@ -326,6 +361,37 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Mobile Search Expandable Drawer */}
+      {isMobileSearchOpen && (
+        <div className="lg:hidden px-4 pb-3 pt-1 border-t border-[#E2E8F0] dark:border-slate-800 animate-fade-in bg-white/95 dark:bg-[#0f172a]/95">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#F1F5F9] dark:bg-[#1e293b] border border-[#2563EB]">
+            <Search className="w-4 h-4 text-[#94A3B8] shrink-0" />
+            <input
+              id="mobile-global-search"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && onSearchSubmit) {
+                  onSearchSubmit();
+                }
+              }}
+              placeholder={isUz ? "Kiyimlarni qidirish..." : "Поиск одежды..."}
+              className="bg-transparent border-none text-xs text-[#0F172A] dark:text-white placeholder-[#94A3B8] focus:outline-none w-full"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => onSearchChange("")}
+                className="text-xs text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white p-1"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

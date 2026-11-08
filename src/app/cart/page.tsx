@@ -43,6 +43,7 @@ export default function CartPage() {
 
   // Checkout Form State
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
+  const [deliveryRegion, setDeliveryRegion] = useState<"tashkent" | "regions">("tashkent");
   const branches = settings?.branches && settings.branches.length > 0 ? settings.branches : BRANCHES;
   const [selectedBranchId, setSelectedBranchId] = useState(branches[0]?.id || "beruniy");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("click");
@@ -173,7 +174,16 @@ export default function CartPage() {
 
   // Pricing calculations
   const subtotalPrice = cartItems.reduce((acc, it) => acc + it.price * it.quantity, 0);
-  const deliveryFee = deliveryType === "pickup" ? 0 : subtotalPrice >= 500000 ? 0 : 30000;
+  const deliveryFee =
+    deliveryType === "pickup"
+      ? 0
+      : deliveryRegion === "tashkent"
+      ? subtotalPrice >= 500000
+        ? 0
+        : 30000
+      : subtotalPrice >= 1000000
+      ? 0
+      : 40000;
   const totalPrice = subtotalPrice + deliveryFee;
   const totalQuantity = cartItems.reduce((acc, it) => acc + it.quantity, 0);
 
@@ -276,7 +286,11 @@ export default function CartPage() {
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
         deliveryType,
-        address: deliveryType === "delivery" ? addressOrNote.trim() : undefined,
+        deliveryRegion: deliveryType === "delivery" ? deliveryRegion : undefined,
+        address:
+          deliveryType === "delivery"
+            ? `${deliveryRegion === "regions" ? "[Viloyat bo'ylab yetkazish] " : "[Toshkent shahri] "}${addressOrNote.trim()}`
+            : undefined,
         branchId: deliveryType === "pickup" ? selectedBranchId : undefined,
         branchName,
         paymentMethod,
@@ -720,16 +734,61 @@ export default function CartPage() {
                 {/* Delivery details */}
                 {deliveryType === "delivery" ? (
                   <div className="space-y-3 pt-1">
+                    {/* Destination Selector: Toshkent vs Viloyatlar */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-[#64748B] dark:text-slate-400 block">
+                        {isRu ? "Регион доставки:" : "Yetkazib berish hududi:"}
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryRegion("tashkent")}
+                          className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                            deliveryRegion === "tashkent"
+                              ? "bg-violet-50 dark:bg-violet-950/40 border-violet-600 text-violet-700 dark:text-violet-300 ring-2 ring-violet-500/30"
+                              : "bg-[#F8FAFC] dark:bg-[#1e293b] border-[#E2E8F0] dark:border-slate-700 text-[#64748B] dark:text-slate-400"
+                          }`}
+                        >
+                          <span className="font-black text-xs">{isRu ? "г. Ташкент" : "Toshkent shahri"}</span>
+                          <span className="text-[10px] text-slate-500 font-normal">
+                            {subtotalPrice >= 500000 ? (isRu ? "Бесплатно" : "Bepul") : "30 000 so'm"}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryRegion("regions")}
+                          className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                            deliveryRegion === "regions"
+                              ? "bg-violet-50 dark:bg-violet-950/40 border-violet-600 text-violet-700 dark:text-violet-300 ring-2 ring-violet-500/30"
+                              : "bg-[#F8FAFC] dark:bg-[#1e293b] border-[#E2E8F0] dark:border-slate-700 text-[#64748B] dark:text-slate-400"
+                          }`}
+                        >
+                          <span className="font-black text-xs">{isRu ? "По регионам (Узб)" : "Viloyatlar bo'ylab"}</span>
+                          <span className="text-[10px] text-slate-500 font-normal">
+                            {subtotalPrice >= 1000000 ? (isRu ? "Бесплатно" : "Bepul") : "40 000 so'm"}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="p-3 rounded-2xl bg-[#F8FAFC] dark:bg-[#1e293b]/70 border border-[#E2E8F0] dark:border-slate-700 text-xs text-[#64748B] dark:text-slate-400 flex items-center gap-2.5">
                       <Truck className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
                       <span>
-                        {subtotalPrice >= 500000
+                        {deliveryRegion === "tashkent"
+                          ? subtotalPrice >= 500000
+                            ? isRu
+                              ? "Бесплатная доставка по Ташкенту курьером (при заказе от 500 000 сум)"
+                              : "Toshkent bo'ylab bepul kuryer orqali yetkaziladi (500 000 so'mdan yuqori)"
+                            : isRu
+                            ? "Доставка по Ташкенту: 30 000 сум (Бесплатно от 500 000 сум)"
+                            : "Toshkent bo'ylab yetkazish: 30 000 so'm (500 000 so'mdan bepul)"
+                          : subtotalPrice >= 1000000
                           ? isRu
-                            ? "Бесплатная доставка по Ташкенту — по согласованию с продавцом (при заказе от 500 000 сум)"
-                            : "Toshkent bo'ylab bepul yetkazib berish — sotuvchi bilan kelishilgan holatda (500 000 so'mdan yuqori)"
+                            ? "Бесплатная доставка по всем регионам Узбекистана (от 1 000 000 сум)"
+                            : "O'zbekiston viloyatlari bo'ylab bepul yetkazib berish (1 000 000 so'mdan yuqori)"
                           : isRu
-                          ? "Доставка по Ташкенту: 30 000 сум — по согласованию с продавцом (Бесплатно от 500 000 сум)"
-                          : "Toshkent bo'ylab yetkazish: 30 000 so'm — sotuvchi bilan kelishilgan holatda (500 000 so'mdan bepul)"}
+                          ? "Доставка по регионам Узбекистана: 40 000 сум (Бесплатно от 1 000 000 сум)"
+                          : "Viloyatlar bo'ylab yetkazish narxi: 40 000 so'm (1 000 000 so'mdan bepul)"}
                       </span>
                     </div>
 
@@ -1035,7 +1094,14 @@ export default function CartPage() {
                     </span>
                   </div>
                   <div className="flex justify-between text-[#64748B] dark:text-slate-400">
-                    <span>{isRu ? "Доставка:" : "Yetkazib berish:"}</span>
+                    <span>
+                      {isRu ? "Доставка" : "Yetkazib berish"}
+                      {deliveryType === "pickup"
+                        ? isRu ? " (Самовывоз):" : " (Filialdan):"
+                        : deliveryRegion === "tashkent"
+                        ? isRu ? " (Ташкент):" : " (Toshkent):"
+                        : isRu ? " (По регионам):" : " (Viloyatlar):"}
+                    </span>
                     <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                       {deliveryFee === 0
                         ? isRu

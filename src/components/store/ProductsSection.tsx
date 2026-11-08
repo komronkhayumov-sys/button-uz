@@ -18,6 +18,7 @@ import { Language, Product } from "@/types";
 import { CATEGORIES } from "@/constants";
 import { formatUzbekCurrency } from "@/lib/format";
 import ProductSkeleton from "@/components/common/ProductSkeleton";
+import { QuickVariationModal } from "./QuickVariationModal";
 
 interface ProductsSectionProps {
   products: Product[];
@@ -25,7 +26,7 @@ interface ProductsSectionProps {
   wishlistIds: string[];
   onToggleWishlist: (productId: string) => void;
   onSelectProduct: (product: Product) => void;
-  onAddToCart: (product: Product, size?: string, color?: string) => void;
+  onAddToCart: (product: Product, size?: string, color?: string, quantity?: number) => void;
   initialCategory?: string;
   initialSearchQuery?: string;
   isLoading?: boolean;
@@ -58,8 +59,9 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   const [onlyAvailableFilter, setOnlyAvailableFilter] = useState<boolean>(false);
 
   // Pagination / Infinite Feed state
-  const [visibleCount, setVisibleCount] = useState<number>(12);
+  const [visibleCount, setVisibleCount] = useState<number>(24);
   const [addedItemAnim, setAddedItemAnim] = useState<string | null>(null);
+  const [variationProduct, setVariationProduct] = useState<Product | null>(null);
   const bottomObserverRef = useRef<HTMLDivElement | null>(null);
 
   // Category counts
@@ -183,9 +185,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 
   const handleAddToCartClick = (e: React.MouseEvent, p: Product) => {
     e.stopPropagation();
-    onAddToCart(p);
-    setAddedItemAnim(p.id);
-    setTimeout(() => setAddedItemAnim(null), 1200);
+    setVariationProduct(p);
   };
 
   const handleClearFilters = () => {
@@ -627,16 +627,38 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
           </div>
 
           {/* Infinite Scroll Continuous Feed Sentinel */}
-          {filteredProducts.length > visibleCount && (
+          {filteredProducts.length > visibleCount ? (
             <div ref={bottomObserverRef} className="py-6 flex flex-col items-center justify-center gap-2">
               <div className="w-5 h-5 border-2 border-[#E5A850] border-t-transparent rounded-full animate-spin" />
               <p className="text-[11px] font-bold text-[#9AA6B6]">
                 {isUz ? "Ko'proq mahsulotlar yuklanmoqda..." : "Загружаем больше товаров..."}
               </p>
             </div>
-          )}
+          ) : filteredProducts.length > 0 ? (
+            <div className="py-6 text-center text-xs font-bold text-[#9AA6B6] border-t border-slate-200 dark:border-slate-800 mt-4 flex items-center justify-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>
+                {isUz
+                  ? `Barcha mahsulotlar ko'rsatildi (${filteredProducts.length} ta)`
+                  : `Все товары показаны (${filteredProducts.length})`}
+              </span>
+            </div>
+          ) : null}
         </div>
       )}
+
+      {/* Quick Variation Modal (Size Selector & Color Picker) */}
+      <QuickVariationModal
+        product={variationProduct}
+        lang={lang}
+        isOpen={Boolean(variationProduct)}
+        onClose={() => setVariationProduct(null)}
+        onConfirm={(prod, sz, col, qty) => {
+          onAddToCart(prod, sz, col, qty);
+          setAddedItemAnim(prod.id);
+          setTimeout(() => setAddedItemAnim(null), 1200);
+        }}
+      />
     </div>
   );
 };

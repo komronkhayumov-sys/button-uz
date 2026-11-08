@@ -18,6 +18,7 @@ import {
 import { Branch, Language, Product } from "@/types";
 import { translations } from "@/lib/i18n";
 import { BRANCHES } from "@/constants";
+import { getStoreTimeStatus } from "@/lib/time";
 
 interface BranchHubProps {
   lang: Language;
@@ -96,12 +97,14 @@ export const BranchHub: React.FC<BranchHubProps> = ({
                       </h3>
                       <div className="flex items-center gap-2 text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5">
                         <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-emerald-500" />
+                          <Clock className={`w-3 h-3 ${getStoreTimeStatus(lang).isOpen ? "text-emerald-500" : "text-rose-500"}`} />
                           <span>{workingHours}</span>
                         </span>
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
-                          {isUz ? "Hozir ochiq" : "Открыто"}
+                        <span className={`w-1.5 h-1.5 rounded-full ${getStoreTimeStatus(lang).isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                        <span className={`font-bold text-[10px] ${getStoreTimeStatus(lang).isOpen ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                          {getStoreTimeStatus(lang).isOpen
+                            ? isUz ? "Hozir ochiq" : "Открыто"
+                            : isUz ? "Hozir yopiq" : "Закрыто"}
                         </span>
                       </div>
                     </div>
