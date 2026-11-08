@@ -17,7 +17,7 @@ export type Product = {
   colors?: string[];
   isAvailable: boolean;
   isFeatured?: boolean;
-  badge?: 'Yangi' | 'Xit' | 'Chegirma' | 'Новинка' | 'Хит' | 'Скидка';
+  badge?: 'Yangi' | 'Xit' | 'Chegirma' | 'Новинка' | 'Хит' | 'Скидка' | string;
   createdAt?: string;
 };
 
