@@ -1,34 +1,26 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   Sparkles,
-  RefreshCw,
-  ShoppingBag,
-  Bookmark,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Ruler,
-  Layers,
-  Heart,
-  Palette,
-  ShieldCheck,
-  Store,
-  SlidersHorizontal,
-  Flame,
-  ArrowRight,
-  Search,
-  CheckCircle2,
-  Share2,
-  Info,
   Bot,
   Send,
-  MessageSquare,
+  RotateCcw,
+  Check,
+  Copy,
+  ShoppingBag,
+  ExternalLink,
+  ChevronRight,
+  Flame,
+  Shirt,
+  MapPin,
+  Clock,
+  Truck,
+  CreditCard,
+  Ruler,
 } from "lucide-react";
-import { Language, Product, CustomerMeasurements, StoreSettings } from "@/types";
+import { Language, Product, StoreSettings } from "@/types";
 import { formatUzbekCurrency } from "@/lib/format";
 
 interface AiModeSectionProps {
@@ -37,130 +29,18 @@ interface AiModeSectionProps {
   settings?: StoreSettings | null;
   onAddToCart: (product: Product, size?: string, color?: string, quantity?: number) => void;
   onSelectProduct: (product: Product) => void;
-  onOrderOutfit: (comboItems: Product[], totalAmount: number, comboTitle: string) => void;
+  onOrderOutfit?: (comboItems: Product[], totalAmount: number, comboTitle: string) => void;
   onNavigateToProfile?: () => void;
   onNavigateToProducts?: () => void;
 }
 
-type ScenarioKey = "wedding" | "business" | "date" | "casual" | "winter";
-
-interface ScenarioConfig {
-  id: ScenarioKey;
-  emoji: string;
-  titleUz: string;
-  titleRu: string;
-  subtitleUz: string;
-  subtitleRu: string;
-  tagsUz: string[];
-  tagsRu: string[];
-  baseMatch: number;
-  palette: Array<{ nameUz: string; nameRu: string; hex: string; roleUz: string; roleRu: string }>;
-  stylistNoteUz: string;
-  stylistNoteRu: string;
+interface ChatMessage {
+  id: string;
+  sender: "user" | "bot";
+  text: string;
+  time: string;
+  recommendedProductIds?: string[];
 }
-
-const SCENARIOS: ScenarioConfig[] = [
-  {
-    id: "wedding",
-    emoji: "🤵",
-    titleUz: "To'y & Hashamatli Oqshom",
-    titleRu: "Свадьба & Торжественный Вечер",
-    subtitleUz: "Italiya bichimidagi nafis klassika, oq ko'ylak va premium charm tufli",
-    subtitleRu: "Итальянский крой, утонченная классика и премиальные кожаные туфли",
-    tagsUz: ["#To'y", "#Klassika", "#Premium", "#Nufuz"],
-    tagsRu: ["#Свадьба", "#Классика", "#Премиум", "#Статус"],
-    baseMatch: 99,
-    palette: [
-      { nameUz: "Qirollik To'q Ko'k", nameRu: "Королевский Синий", hex: "#1e3a8a", roleUz: "Asosiy Kostyum", roleRu: "База костюма" },
-      { nameUz: "Qordek Oq", nameRu: "Белоснежный", hex: "#f8fafc", roleUz: "Ko'ylak kontrasti", roleRu: "Контраст верха" },
-      { nameUz: "Oksford Qora Charm", nameRu: "Оксфорд Черный", hex: "#0f172a", roleUz: "Poyabzal aksenti", roleRu: "Обувной акцент" },
-    ],
-    stylistNoteUz:
-      "Ushbu to'q ko'k klassik kostyum qora poyabzal bilan to'y va tantanalarda qat'iyatli, jiddiy va juda hashamatli ko'rinish beradi. Oq rang yuzingizga tiniq nur bag'ishlaydi.",
-    stylistNoteRu:
-      "Темно-синий итальянский костюм в дуэте с черными туфлями подчеркивает высокий статус на торжествах. Белый акцент освежает образ.",
-  },
-  {
-    id: "business",
-    emoji: "💼",
-    titleUz: "Biznes & Rasmiy Muzokara",
-    titleRu: "Деловой Стиль & Переговоры",
-    subtitleUz: "Hamkorlar va investorlar bilan uchrashuv uchun ideal nufuzli uslub",
-    subtitleRu: "Безупречный образ для важных встреч, совещаний и инвесторов",
-    tagsUz: ["#Biznes", "#Ofis", "#Muzokara", "#SlimFit"],
-    tagsRu: ["#Бизнес", "#Офис", "#Переговоры", "#SlimFit"],
-    baseMatch: 98,
-    palette: [
-      { nameUz: "Grafit Slate", nameRu: "Графитовый Слейт", hex: "#334155", roleUz: "Asosiy qatlam", roleRu: "Основной слой" },
-      { nameUz: "Okean Ko'k", nameRu: "Океанский Синий", hex: "#0284c7", roleUz: "Ishonch aksenti", roleRu: "Акцент доверия" },
-      { nameUz: "Neytral Oq", nameRu: "Нейтральный Белый", hex: "#ffffff", roleUz: "Yengillik", roleRu: "Легкость" },
-    ],
-    stylistNoteUz:
-      "Slim-Fit qora yoki to'q kulrang kostyum qat'iyatli biznesmen aurasini shakllantiradi. Chino yoki klassik shim bilan qulaylik va rasmiyatchilik mukammal muvozanatda.",
-    stylistNoteRu:
-      "Костюм силуэта Slim-Fit формирует образ уверенного лидера. Сочетание с брюками Chino создает баланс комфорта и строгости.",
-  },
-  {
-    id: "date",
-    emoji: "☕",
-    titleUz: "Romantik Uchrashuv & Kechki Taom",
-    titleRu: "Романтический Вечер & Свидание",
-    subtitleUz: "Nafis, qimmatbaho va maftunkor Smart-Casual look",
-    subtitleRu: "Привлекательный, непринужденный образ Smart-Casual",
-    tagsUz: ["#Uchrashuv", "#SmartCasual", "#Maftunkor", "#Did"],
-    tagsRu: ["#Свидание", "#SmartCasual", "#Шарм", "#Вкус"],
-    baseMatch: 97,
-    palette: [
-      { nameUz: "Qora Charm", nameRu: "Черная Кожа", hex: "#090d14", roleUz: "Jasoratli fon", roleRu: "Мужественный фон" },
-      { nameUz: "To'q Binafsha / Indigo", nameRu: "Глубокий Индиго", hex: "#4c1d95", roleUz: "Maftunkor aksent", roleRu: "Шарм акцент" },
-      { nameUz: "Issiq Bej", nameRu: "Теплый Беж", hex: "#e2e8f0", roleUz: "Yumshoq o'tish", roleRu: "Мягкий переход" },
-    ],
-    stylistNoteUz:
-      "Charm kurtka yoki nafis polo kiygan erkak doimo ayollarning e'tiborini tortadi. Toza poyabzal va mos shim bilan tashqi ko'rinishingiz didli va qimmatbaho tuyiladi.",
-    stylistNoteRu:
-      "Кожаная куртка в паре с премиальным поло создает притягательный образ. Чистые линии подчеркивают тонкий мужской вкус.",
-  },
-  {
-    id: "casual",
-    emoji: "🏙️",
-    titleUz: "Urban Streetwear & Weekend",
-    titleRu: "Urban Casual & Выходной День",
-    subtitleUz: "Kundalik erkinlik, harakat qulayligi va zamonaviy shahar ritmi",
-    subtitleRu: "Свобода движений, комфорт и современный уличный стиль",
-    tagsUz: ["#Urban", "#Bomber", "#Kundalik", "#Qulaylik"],
-    tagsRu: ["#Urban", "#Бомбер", "#Повседневный", "#Комфорт"],
-    baseMatch: 96,
-    palette: [
-      { nameUz: "Obsidian Qora", nameRu: "Обсидиан Черный", hex: "#090d14", roleUz: "Asosiy baza", roleRu: "Базовая основа" },
-      { nameUz: "Shahar Kulrangi", nameRu: "Городской Серый", hex: "#64748b", roleUz: "O'tish qatlami", roleRu: "Переходный слой" },
-      { nameUz: "100% Paxta Oq", nameRu: "Хлопковый Белый", hex: "#ffffff", roleUz: "Yorug'lik", roleRu: "Светлый акцент" },
-    ],
-    stylistNoteUz:
-      "Qora bomber va zich futer xudining birikmasi sovuqda ham, harakatda ham eng qulay tanlov. Shahar bo'ylab sayr va do'stlar davrasi uchun ayni muddao.",
-    stylistNoteRu:
-      "Бомбер и плотное хлопковое худи обеспечивают максимальный комфорт во время прогулок по городу и встреч с друзьями.",
-  },
-  {
-    id: "winter",
-    emoji: "❄️",
-    titleUz: "Kuz-Qish Qatlamli Uslub (Layering)",
-    titleRu: "Осенне-Зимний Многослойный Стиль",
-    subtitleUz: "Sovuq havoda iliq, shamoldan himoyalangan va zamonaviy ko'rinish",
-    subtitleRu: "Теплый, ветрозащитный и солидный образ для холодной погоды",
-    tagsUz: ["#KuzQish", "#Issiq", "#Layering", "#Zamonaviy"],
-    tagsRu: ["#ОсеньЗима", "#Тепло", "#Многослойность", "#Стиль"],
-    baseMatch: 98,
-    palette: [
-      { nameUz: "To'q Zich Grafit", nameRu: "Плотный Графит", hex: "#1e293b", roleUz: "Issiq qobiq", roleRu: "Теплая защита" },
-      { nameUz: "To'q Binafsha Elegance", nameRu: "Темно-Фиолетовый", hex: "#6d28d9", roleUz: "Brend aksenti", roleRu: "Брендовый акцент" },
-      { nameUz: "Tabiiy Jun", nameRu: "Натуральная Шерсть", hex: "#475569", roleUz: "Ichki qatlam", roleRu: "Внутренний слой" },
-    ],
-    stylistNoteUz:
-      "Kurtka ostidan zich xudi yoki polo kiyish zamonaviy ko'p qatlamli (layering) siluetni hosil qiladi. Tana issiqligi saqlanadi va qomatingiz vizual baquvvat ko'rinadi.",
-    stylistNoteRu:
-      "Многослойный образ согревает в прохладную погоду и визуально подчеркивает мужественные плечи и силуэт.",
-  },
-];
 
 export const AiModeSection: React.FC<AiModeSectionProps> = ({
   products,
@@ -168,35 +48,138 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
   settings,
   onAddToCart,
   onSelectProduct,
-  onOrderOutfit,
-  onNavigateToProfile,
   onNavigateToProducts,
 }) => {
   const isUz = lang === "uz";
-  const comboDiscountPercent = settings?.comboDiscountPercent ?? 10;
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Scenario & mode state
-  const [selectedScenario, setSelectedScenario] = useState<ScenarioKey>("wedding");
-  const [activeMode, setActiveMode] = useState<"scenario" | "prompt" | "chat">("scenario");
-  const [viewStyle, setViewStyle] = useState<"stack" | "grid">("stack");
+  const initialGreetingUz =
+    `Assalomu alaykum! Men **BUTTON Men's Wear** shaxsiy AI stilisti va do'kon maslahatchisiman 👔\n\n` +
+    `Mendan quyidagi barcha masalalar bo'yicha erkin so'rashingiz mumkin:\n` +
+    `• 🤵 **Kiyinish uslubi va obrazlar:** To'y, tantana, ofis, romantik uchrashuv yoki kundalik kiyinish bo'yicha maslahat\n` +
+    `• 🎨 **Ranglar uyg'unligi:** Shim, ko'ylak, kurtka va poyabzallarni bir-biriga moslash\n` +
+    `• 📏 **O'lcham hisoblash:** Bo'yingiz (sm) va vazningizni (kg) aytsangiz, aniq razmerni aytib beraman\n` +
+    `• 📍 **Do'konimiz ma'lumotlari:** Filiallarimiz manzili, ish vaqti, dostavka va to'lov turlari\n\n` +
+    `Sizga qanday kiyim yoki maslahat kerak? Quyidagi tayyor savollardan birini tanlashingiz yoki o'zingiz yozishingiz mumkin!`;
 
-  // Real AI Chat Assistant state
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: "user" | "bot"; text: string }>>([
-    {
-      sender: "bot",
-      text: isUz
-        ? "Assalomu alaykum! Men BUTTON Men's Wear do'konining sun'iy intellekt stilistiman. Sizga qaysi tadbirga kiyim tanlashda, o'lcham hisoblashda yoki do'konimiz xizmatlari bo'yicha yordam bera olaman?"
-        : "Здравствуйте! Я AI-стилист BUTTON Men's Wear. Помогу вам подобрать образ для любого события, рассчитать размер или ответить на вопросы по доставке и филиалам!",
-    },
-  ]);
+  const initialGreetingRu =
+    `Здравствуйте! Я персональный AI-стилист и консультант **BUTTON Men's Wear** 👔\n\n` +
+    `Вы можете задать мне любые вопросы:\n` +
+    `• 🤵 **Стиль и готовые образы:** Подбор одежды на свадьбу, в офис, на свидание или на каждый день\n` +
+    `• 🎨 **Цветовые сочетания:** Гармония верха, низа, обуви и аксессуаров\n` +
+    `• 📏 **Подбор размера:** Назовите ваш рост (см) и вес (кг), и я мгновенно рассчитаю точный размер\n` +
+    `• 📍 **Информация о магазине:** Адреса филиалов, график работы, доставка и способы оплаты\n\n` +
+    `Чем могу помочь? Выберите готовый вопрос ниже или напишите свой!`;
+
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    return [
+      {
+        id: "msg-init",
+        sender: "bot",
+        text: isUz ? initialGreetingUz : initialGreetingRu,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      },
+    ];
+  });
+
   const [chatInput, setChatInput] = useState("");
   const [isBotTyping, setIsBotTyping] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleSendChatMessage = async (msgText?: string) => {
-    const textToSend = (msgText || chatInput).trim();
+  // Auto-scroll to bottom of chat
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, isBotTyping]);
+
+  // Quick prompt presets
+  const quickPrompts = [
+    {
+      emoji: "🤵",
+      titleUz: "To'y & tantanaga qanday kiyinsam bo'ladi?",
+      titleRu: "Что надеть на свадьбу или торжество?",
+    },
+    {
+      emoji: "💼",
+      titleUz: "Biznes & ofis uchun qanday look mos?",
+      titleRu: "Деловой образ в офис и на переговоры",
+    },
+    {
+      emoji: "☕",
+      titleUz: "Romantik uchrashuvga qanday obraz tanlash kerak?",
+      titleRu: "Образ для свидания и ужина",
+    },
+    {
+      emoji: "🏙️",
+      titleUz: "Kundalik qulay kiyimlar to'plami",
+      titleRu: "Удобный повседневный стиль (Casual)",
+    },
+    {
+      emoji: "🍂",
+      titleUz: "Bahorgi va kuzgi kurtkalar tavsiyasi",
+      titleRu: "Весенние и осенние куртки и бомберы",
+    },
+    {
+      emoji: "📏",
+      titleUz: "Bo'yim 178 sm, vaznim 75 kg. Qaysi o'lcham?",
+      titleRu: "Рост 178 см, вес 75 кг. Какой размер?",
+    },
+    {
+      emoji: "📍",
+      titleUz: "Toshkentdagi filiallar manzillari va ish vaqti?",
+      titleRu: "Адреса филиалов и время работы в Ташкенте?",
+    },
+    {
+      emoji: "🚚",
+      titleUz: "Toshkent va viloyatlarga dostavka shartlari?",
+      titleRu: "Условия доставки по Ташкенту и регионам?",
+    },
+    {
+      emoji: "💳",
+      titleUz: "Qanday to'lov usullari mavjud? (Click, Payme)",
+      titleRu: "Способы оплаты (Click, Payme, Uzum)?",
+    },
+    {
+      emoji: "👞",
+      titleUz: "Lofer va krossovkalar qanday bor?",
+      titleRu: "Какие есть лоферы и кроссовки?",
+    },
+  ];
+
+  // Match products mentioned in AI response
+  const detectRecommendedProducts = (text: string): Product[] => {
+    const lower = text.toLowerCase();
+    return products.filter((p) => {
+      const pName = p.name.toLowerCase();
+      if (lower.includes(pName)) return true;
+      if (pName.includes("cardigan") && lower.includes("kardigan")) return true;
+      if (pName.includes("bomber") && lower.includes("bomber")) return true;
+      if (pName.includes("jeans") && (lower.includes("jinsi") || lower.includes("джинс"))) return true;
+      if (pName.includes("loafers") && (lower.includes("lofer") || lower.includes("лофер"))) return true;
+      if (pName.includes("sneakers") && (lower.includes("krossovka") || lower.includes("кед"))) return true;
+      if (pName.includes("t-shirt") && (lower.includes("futbolka") || lower.includes("футболк"))) return true;
+      if (pName.includes("vest") && (lower.includes("jiletka") || lower.includes("жилет"))) return true;
+      if (pName.includes("chelsea") && (lower.includes("chelsea") || lower.includes("челси"))) return true;
+      return false;
+    }).slice(0, 3);
+  };
+
+  const handleSendMessage = async (customText?: string) => {
+    const textToSend = (customText || chatInput).trim();
     if (!textToSend || isBotTyping) return;
 
-    setChatMessages((prev) => [...prev, { sender: "user", text: textToSend }]);
+    const userMessage: ChatMessage = {
+      id: `usr-${Date.now()}`,
+      sender: "user",
+      text: textToSend,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+
+    setChatMessages((prev) => [...prev, userMessage]);
     setChatInput("");
     setIsBotTyping(true);
 
@@ -210,964 +193,317 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
           lang,
         }),
       });
+
       const data = await res.json();
-      if (data.reply) {
-        setChatMessages((prev) => [...prev, { sender: "bot", text: data.reply }]);
-      } else {
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            sender: "bot",
-            text: isUz
-              ? "Kechirasiz, savolingizni tushuna olmadim. Iltimos, qaytadan yozing."
-              : "Извините, не удалось обработать запрос. Пожалуйста, попробуйте еще раз.",
-          },
-        ]);
-      }
+      const replyText =
+        data.reply ||
+        (isUz
+          ? "Kechirasiz, so'rovingizni qayta ishlay olmadim. Iltimos, boshqacha tarzda so'rab ko'ring."
+          : "Извините, не удалось обработать запрос. Пожалуйста, попробуйте сформулировать иначе.");
+
+      const matched = detectRecommendedProducts(replyText);
+
+      const botMessage: ChatMessage = {
+        id: `bot-${Date.now()}`,
+        sender: "bot",
+        text: replyText,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        recommendedProductIds: matched.map((p) => p.id),
+      };
+
+      setChatMessages((prev) => [...prev, botMessage]);
     } catch {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: "bot",
-          text: isUz
-            ? "Aloqada vaqtinchalik uzilish. Iltimos, birozdan so'ng urinib ko'ring yoki filiallarimizga murojaat qiling."
-            : "Временная ошибка связи. Пожалуйста, попробуйте позже.",
-        },
-      ]);
+      const errorMsg: ChatMessage = {
+        id: `bot-err-${Date.now()}`,
+        sender: "bot",
+        text: isUz
+          ? "Aloqada vaqtinchalik uzilish yuz berdi. Iltimos, qaytadan urinib ko'ring yoki filiallarimizga qo'ng'iroq qiling (+998 94 613 55 55)."
+          : "Временная ошибка связи. Пожалуйста, попробуйте еще раз или свяжитесь с нами по телефону (+998 94 613 55 55).",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setChatMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsBotTyping(false);
     }
   };
 
-  // Custom prompt input
-  const [customPrompt, setCustomPrompt] = useState("");
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanStepIndex, setScanStepIndex] = useState(0);
+  const handleResetChat = () => {
+    setChatMessages([
+      {
+        id: `msg-reset-${Date.now()}`,
+        sender: "bot",
+        text: isUz ? initialGreetingUz : initialGreetingRu,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      },
+    ]);
+  };
 
-  // Layer indices for the 4 distinct categories (Outerwear, Top, Bottom, Shoes/Accessories)
-  const [outerIndex, setOuterIndex] = useState(0);
-  const [topIndex, setTopIndex] = useState(0);
-  const [bottomIndex, setBottomIndex] = useState(0);
-  const [shoesIndex, setShoesIndex] = useState(0);
+  const handleCopyText = (text: string, id: string) => {
+    if (typeof window === "undefined") return;
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
-  // Feedback toast states
-  const [isSaved, setIsSaved] = useState(false);
-  const [savedLooksCount, setSavedLooksCount] = useState(0);
-  const [addedAllSuccess, setAddedAllSuccess] = useState(false);
-  const [reservedSuccess, setReservedSuccess] = useState(false);
-
-  // Customer measurements from localStorage
-  const [measurements, setMeasurements] = useState<CustomerMeasurements | null>(null);
-
-  useEffect(() => {
-    try {
-      const savedCust = localStorage.getItem("button_customer");
-      if (savedCust) {
-        const parsed = JSON.parse(savedCust);
-        if (parsed.measurements) {
-          setMeasurements(parsed.measurements);
+  // Render markdown-like bold text & bullet points
+  const renderFormattedText = (raw: string) => {
+    const lines = raw.split("\n");
+    return lines.map((line, idx) => {
+      // Split bold formatting: **bold text**
+      const parts = line.split(/(\*\*.*?\*\*)/g);
+      const renderedParts = parts.map((part, pIdx) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <strong key={pIdx} className="font-extrabold text-violet-700 dark:text-violet-300">
+              {part.slice(2, -2)}
+            </strong>
+          );
         }
-      }
-      const looks = localStorage.getItem("button_saved_outfits");
-      if (looks) {
-        const arr = JSON.parse(looks);
-        setSavedLooksCount(Array.isArray(arr) ? arr.length : 0);
-      }
-    } catch (e) {}
-  }, []);
+        if (part.startsWith("*") && part.endsWith("*")) {
+          return (
+            <em key={pIdx} className="italic text-zinc-500 dark:text-zinc-400">
+              {part.slice(1, -1)}
+            </em>
+          );
+        }
+        return part;
+      });
 
-  const preferredSize = measurements?.standardSize || "L";
-
-  // Category Pools strictly filtered from real admin products
-  const suits = useMemo(() => products.filter((p) => p.category === "suits" && p.isAvailable !== false), [products]);
-  const jackets = useMemo(() => products.filter((p) => p.category === "jackets" && p.isAvailable !== false), [products]);
-  const polos = useMemo(() => products.filter((p) => p.category === "polos" && p.isAvailable !== false), [products]);
-  const hoodies = useMemo(() => products.filter((p) => p.category === "hoodies" && p.isAvailable !== false), [products]);
-  const pants = useMemo(() => products.filter((p) => p.category === "pants" && p.isAvailable !== false), [products]);
-  const shoes = useMemo(() => products.filter((p) => p.category === "shoes" && p.isAvailable !== false), [products]);
-  const accessories = useMemo(() => products.filter((p) => p.category === "accessories" && p.isAvailable !== false), [products]);
-
-  // Dynamic Pools tailored to each Scenario
-  const currentPools = useMemo(() => {
-    let outer: Product[] = [];
-    let top: Product[] = [];
-    let bottom: Product[] = pants.length > 0 ? pants : products;
-    let footwear: Product[] = shoes.length > 0 ? shoes : accessories.length > 0 ? accessories : products;
-
-    if (selectedScenario === "wedding") {
-      outer = suits.length > 0 ? suits : products;
-      top = polos.length > 0 ? polos : hoodies;
-      bottom = pants.length > 0 ? pants : products;
-      footwear = shoes.length > 0 ? shoes : accessories;
-    } else if (selectedScenario === "business") {
-      outer = suits.length > 0 ? suits : jackets;
-      top = polos.length > 0 ? polos : hoodies;
-      bottom = pants.length > 0 ? pants : products;
-      footwear = shoes.length > 0 ? shoes : products;
-    } else if (selectedScenario === "date") {
-      outer = jackets.length > 0 ? jackets : suits;
-      top = polos.length > 0 ? polos : hoodies;
-      bottom = pants.length > 0 ? pants : products;
-      footwear = shoes.length > 0 ? shoes : accessories;
-    } else if (selectedScenario === "casual") {
-      outer = jackets.length > 0 ? jackets : hoodies;
-      top = hoodies.length > 0 ? hoodies : polos;
-      bottom = pants.length > 0 ? pants : products;
-      footwear = shoes.length > 0 ? shoes : products;
-    } else if (selectedScenario === "winter") {
-      outer = jackets.length > 0 ? jackets : suits;
-      top = hoodies.length > 0 ? hoodies : polos;
-      bottom = pants.length > 0 ? pants : products;
-      footwear = shoes.length > 0 ? shoes : accessories;
-    }
-
-    // Fallbacks if some categories are empty
-    if (outer.length === 0) outer = products;
-    if (top.length === 0) top = products;
-    if (bottom.length === 0) bottom = products;
-    if (footwear.length === 0) footwear = products;
-
-    return { outer, top, bottom, footwear };
-  }, [selectedScenario, suits, jackets, polos, hoodies, pants, shoes, accessories, products]);
-
-  // Currently selected items for the 4 layers
-  const outerItem = currentPools.outer.length > 0 ? currentPools.outer[outerIndex % currentPools.outer.length] : products[0];
-  const topItem = currentPools.top.length > 0 ? currentPools.top[topIndex % currentPools.top.length] : products[1];
-  const bottomItem = currentPools.bottom.length > 0 ? currentPools.bottom[bottomIndex % currentPools.bottom.length] : products[2];
-  const shoesItem = currentPools.footwear.length > 0 ? currentPools.footwear[shoesIndex % currentPools.footwear.length] : products[3];
-
-  const selectedItems = useMemo(() => {
-    // Collect unique non-null items
-    const list = [outerItem, topItem, bottomItem, shoesItem].filter(Boolean);
-    const seen = new Set<string>();
-    return list.filter((it) => {
-      if (seen.has(it.id)) return false;
-      seen.add(it.id);
-      return true;
+      return (
+        <p key={idx} className={line.trim() === "" ? "h-2" : "leading-relaxed my-0.5"}>
+          {renderedParts}
+        </p>
+      );
     });
-  }, [outerItem, topItem, bottomItem, shoesItem]);
-
-  // Strict Admin Price Calculation
-  const totalPrice = useMemo(() => {
-    return selectedItems.reduce((acc, item) => acc + (item.price || 0), 0);
-  }, [selectedItems]);
-
-  // Outfit bundle incentive (Adjustable by Admin)
-  const discountedPrice = useMemo(() => {
-    return Math.round(totalPrice * (1 - comboDiscountPercent / 100));
-  }, [totalPrice, comboDiscountPercent]);
-
-  const savedAmount = totalPrice - discountedPrice;
-
-  // Active scenario config
-  const scenarioConfig = useMemo(() => {
-    return SCENARIOS.find((s) => s.id === selectedScenario) || SCENARIOS[0];
-  }, [selectedScenario]);
-
-  // Dynamic Match Score calculation based on layer swaps
-  const matchScore = useMemo(() => {
-    const variance = ((outerIndex + topIndex + bottomIndex + shoesIndex) % 4);
-    return Math.min(99, scenarioConfig.baseMatch - variance);
-  }, [outerIndex, topIndex, bottomIndex, shoesIndex, scenarioConfig.baseMatch]);
-
-  // Custom prompt search submit
-  const handlePromptSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!customPrompt.trim()) return;
-
-    setIsScanning(true);
-    setScanStepIndex(0);
-
-    const stepTimer1 = setTimeout(() => setScanStepIndex(1), 400);
-    const stepTimer2 = setTimeout(() => setScanStepIndex(2), 850);
-    const stepTimer3 = setTimeout(() => {
-      const q = customPrompt.toLowerCase();
-      if (q.includes("to'y") || q.includes("toy") || q.includes("свадьб") || q.includes("klassik")) {
-        setSelectedScenario("wedding");
-      } else if (q.includes("biznes") || q.includes("ofis") || q.includes("delov") || q.includes("ish")) {
-        setSelectedScenario("business");
-      } else if (q.includes("uchrashuv") || q.includes("qiz") || q.includes("svidan") || q.includes("romant")) {
-        setSelectedScenario("date");
-      } else if (q.includes("qish") || q.includes("sovuq") || q.includes("kurtka") || q.includes("palto")) {
-        setSelectedScenario("winter");
-      } else {
-        setSelectedScenario("casual");
-      }
-
-      setOuterIndex((prev) => prev + 1);
-      setTopIndex((prev) => prev + 1);
-      setBottomIndex((prev) => prev + 1);
-      setShoesIndex((prev) => prev + 1);
-      setIsScanning(false);
-    }, 1300);
-
-    return () => {
-      clearTimeout(stepTimer1);
-      clearTimeout(stepTimer2);
-      clearTimeout(stepTimer3);
-    };
   };
-
-  // Full regeneration
-  const handleRandomizeAll = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      setOuterIndex((prev) => prev + 1);
-      setTopIndex((prev) => prev + 1);
-      setBottomIndex((prev) => prev + 1);
-      setShoesIndex((prev) => prev + 1);
-      setIsScanning(false);
-    }, 450);
-  };
-
-  // Save outfit to customer profile
-  const handleSaveOutfit = () => {
-    try {
-      const savedLook = {
-        id: `look-${selectedScenario}-${Date.now()}`,
-        style: selectedScenario,
-        titleUz: scenarioConfig.titleUz,
-        titleRu: scenarioConfig.titleRu,
-        items: selectedItems,
-        totalPrice,
-        discountedPrice,
-        savedAt: new Date().toISOString(),
-      };
-      const existing = localStorage.getItem("button_saved_outfits");
-      const list = existing ? JSON.parse(existing) : [];
-      const updated = [savedLook, ...list.filter((l: any) => l.id !== savedLook.id)];
-      localStorage.setItem("button_saved_outfits", JSON.stringify(updated));
-      setSavedLooksCount(updated.length);
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 3000);
-    } catch (e) {}
-  };
-
-  // Add all 4 items directly to cart
-  const handleAddAllToCart = () => {
-    selectedItems.forEach((item) => {
-      const chosenSize = item.sizes?.includes(preferredSize) ? preferredSize : item.sizes?.[0] || "M";
-      const chosenColor = item.colors?.[0] || "";
-      onAddToCart(item, chosenSize, chosenColor, 1);
-    });
-    setAddedAllSuccess(true);
-    setTimeout(() => setAddedAllSuccess(false), 3000);
-  };
-
-  // Reserve outfit in branch for 2 hours
-  const handleReserveInBranch = () => {
-    setReservedSuccess(true);
-    setTimeout(() => setReservedSuccess(false), 3500);
-  };
-
-  const scanSteps = [
-    isUz ? "1. Mijoz so'rovi va ranglar gammasi tahlil qilinmoqda..." : "1. Анализ цветовой гаммы и ключевых запросов...",
-    isUz ? "2. Admin katalogidagi 28 ta kiyimdan mos kombinatsiya saralanmoqda..." : "2. Подбор из 28 реальных позиций каталога...",
-    isUz ? "3. Razmer va bichim balansi tekshirilmoqda..." : "3. Проверка посадки по фигуре и расчет гармонии...",
-  ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in max-w-4xl mx-auto pb-12">
-      {/* ========================================================
-          1. HEADER & AI BADGE
-          ======================================================== */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] dark:border-slate-800">
-        <button
-          type="button"
-          onClick={onNavigateToProducts}
-          className="w-10 h-10 rounded-2xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 flex items-center justify-center text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition-colors cursor-pointer shadow-xs"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+    <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-6 pb-12 animate-fade-in font-sans">
+      {/* 1. Header Banner */}
+      <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white border border-violet-500/30 shadow-2xl relative overflow-hidden">
+        {/* Subtle decorative glow */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-violet-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-60 h-60 bg-blue-600/15 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="text-center space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-700 dark:text-violet-400 text-xs font-black uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: "8s" }} />
-            <span>BUTTON AI STYLIST 2.0</span>
-          </div>
-          <h1 className="text-lg sm:text-2xl font-black text-[#0F172A] dark:text-white tracking-tight">
-            {isUz ? "Shaxsiy Stilist & Obraz Studiyasi" : "Персональный AI Стилист & Студия Образов"}
-          </h1>
-          <p className="text-xs text-[#64748B] dark:text-slate-400">
-            {isUz
-              ? "Do'kondagi haqiqiy kiyimlardan sizga mos mukammal to'plam"
-              : "Готовые гармоничные образы из реального каталога BUTTON"}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleSaveOutfit}
-          className="w-10 h-10 rounded-2xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 flex items-center justify-center text-[#64748B] dark:text-slate-400 hover:text-rose-500 transition-colors cursor-pointer shadow-xs relative"
-          title={isUz ? "Obrazni saqlash" : "Сохранить образ"}
-        >
-          <Heart className={`w-5 h-5 ${isSaved ? "fill-rose-500 text-rose-500" : ""}`} />
-          {savedLooksCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-700 text-white text-[9px] font-mono font-bold flex items-center justify-center">
-              {savedLooksCount}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* ========================================================
-          2. MODE SWITCHER: Senariylar vs Erkin AI So'rov vs AI Maslahatchi
-          ======================================================== */}
-      <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 max-w-lg mx-auto">
-        <button
-          type="button"
-          onClick={() => setActiveMode("scenario")}
-          className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            activeMode === "scenario"
-              ? "bg-violet-700 text-white shadow-sm font-black"
-              : "text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white"
-          }`}
-        >
-          <span>🎯</span>
-          <span className="truncate">{isUz ? "Tadbirlar" : "По случаю"}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveMode("prompt")}
-          className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            activeMode === "prompt"
-              ? "bg-violet-700 text-white shadow-sm font-black"
-              : "text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white"
-          }`}
-        >
-          <span>✨</span>
-          <span className="truncate">{isUz ? "AI So'rov" : "AI Запрос"}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveMode("chat")}
-          className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            activeMode === "chat"
-              ? "bg-violet-700 text-white shadow-sm font-black"
-              : "text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white"
-          }`}
-        >
-          <span>💬</span>
-          <span className="truncate">{isUz ? "AI Maslahatchi" : "AI Чат"}</span>
-        </button>
-      </div>
-
-      {/* Mode A: SCENARIOS QUICK CARDS */}
-      {activeMode === "scenario" && (
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
-            {SCENARIOS.map((sc) => {
-              const isSelected = selectedScenario === sc.id;
-              return (
-                <button
-                  key={sc.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedScenario(sc.id);
-                    setOuterIndex(0);
-                    setTopIndex(0);
-                    setBottomIndex(0);
-                    setShoesIndex(0);
-                  }}
-                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-2.5 shadow-xs ${
-                    isSelected
-                      ? "bg-violet-700 text-white border-violet-700 shadow-md shadow-violet-700/25 scale-[1.02]"
-                      : "bg-white dark:bg-[#0f172a] text-[#0F172A] dark:text-white border-[#E2E8F0] dark:border-slate-800 hover:border-violet-600/40"
-                  }`}
-                >
-                  <span className="text-lg">{sc.emoji}</span>
-                  <div>
-                    <h3 className="text-xs font-black block">
-                      {isUz ? sc.titleUz : sc.titleRu}
-                    </h3>
-                    <span
-                      className={`text-[10px] font-mono block ${
-                        isSelected ? "text-violet-200" : "text-[#64748B] dark:text-slate-400"
-                      }`}
-                    >
-                      {sc.baseMatch}% moslik
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Mode B: FREEFORM AI PROMPT BOX */}
-      {activeMode === "prompt" && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 shadow-sm space-y-3">
-          <form onSubmit={handlePromptSubmit} className="space-y-3">
-            <div className="relative">
-              <Search className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-3.5" />
-              <input
-                type="text"
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
-                placeholder={
-                  isUz
-                    ? "Masalan: Do'stimning to'yiga nima kiysam bo'ladi? Yoki: Qora kurtka va qulay shim..."
-                    : "Например: Что надеть на свадьбу друга? Или: Черная куртка и удобные брюки..."
-                }
-                className="w-full pl-10 pr-24 py-3 rounded-2xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 text-xs sm:text-sm font-medium text-[#0F172A] dark:text-white placeholder:text-[#94A3B8] focus:outline-none focus:border-violet-600"
-              />
-              <button
-                type="submit"
-                disabled={isScanning || !customPrompt.trim()}
-                className="absolute right-1.5 top-1.5 bottom-1.5 px-4 rounded-xl bg-violet-700 hover:bg-violet-800 text-white font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{isUz ? "Tahlil" : "Анализ"}</span>
-              </button>
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/20 border border-violet-400/30 text-violet-300 text-xs font-bold tracking-wide">
+              <Sparkles className="w-3.5 h-3.5 text-violet-300 animate-spin" style={{ animationDuration: "6s" }} />
+              <span>BUTTON AI STYLIST & CONSULTANT</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />
             </div>
 
-            {/* Quick Sample Prompts */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] text-[#64748B] dark:text-slate-400 font-semibold mr-1">
-                {isUz ? "Namunalar:" : "Примеры:"}
-              </span>
-              {[
-                { uz: "🤵 To'y uchun hashamatli look", ru: "🤵 Образ на свадьбу" },
-                { uz: "💼 Ofis uchun Slim-Fit kostyum", ru: "💼 Деловой костюм Slim-Fit" },
-                { uz: "☕ Romantik uchrashuvga", ru: "☕ На свидание" },
-                { uz: "🏙️ Shaharda yurishga qulay", ru: "🏙️ Удобный городской" },
-              ].map((sample, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    setCustomPrompt(isUz ? sample.uz.slice(2) : sample.ru.slice(2));
-                  }}
-                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-[11px] text-[#64748B] dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-violet-500/30 transition-colors cursor-pointer"
-                >
-                  {isUz ? sample.uz : sample.ru}
-                </button>
-              ))}
-            </div>
-          </form>
-        </div>
-      )}
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white">
+              {isUz ? "Shaxsiy Stilist & Do'kon Maslahatchisi" : "Персональный AI-Стилист и Консультант"}
+            </h1>
 
-      {/* Mode C: INTERACTIVE AI STYLIST CHAT */}
-      {activeMode === "chat" && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 shadow-sm space-y-4 max-w-2xl mx-auto animate-fade-in">
-          <div className="flex items-center gap-3 pb-3 border-b border-[#E2E8F0] dark:border-slate-800">
-            <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-950/60 flex items-center justify-center text-violet-700 dark:text-violet-300 shrink-0">
-              <Bot className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-[#0F172A] dark:text-white flex items-center gap-2">
-                <span>BUTTON AI Stilist & Maslahatchi</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              </h3>
-              <p className="text-[11px] text-[#64748B] dark:text-slate-400">
-                {isUz ? "Erkaklar kiyimi, o'lcham va uslub bo'yicha onlayn maslahat" : "Онлайн консультант по стилю и подбору одежды"}
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Questions Chips */}
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              { uz: "🤵 To'yga qanday kiyim tanlasam bo'ladi?", ru: "🤵 Что надеть на свадьбу?" },
-              { uz: "📏 Bo'yim 178 sm, vaznim 75 kg. Qaysi o'lcham?", ru: "📏 Рост 178 см, вес 75 кг. Какой размер?" },
-              { uz: "🚚 Yetkazib berish shartlari qanaqa?", ru: "🚚 Условия доставки?" },
-              { uz: "📍 Filiallar manzili va ish vaqti?", ru: "📍 Адреса филиалов и график работы?" },
-            ].map((qItem, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleSendChatMessage(isUz ? qItem.uz : qItem.ru)}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-violet-950/40 text-xs font-semibold text-[#64748B] dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-violet-500/30 transition-colors cursor-pointer text-left"
-              >
-                {isUz ? qItem.uz : qItem.ru}
-              </button>
-            ))}
-          </div>
-
-          {/* Messages Feed */}
-          <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-            {chatMessages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex gap-2.5 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-              >
-                {msg.sender === "bot" && (
-                  <div className="w-7 h-7 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0 mt-0.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                  </div>
-                )}
-                <div
-                  className={`p-3.5 rounded-2xl max-w-[85%] text-xs sm:text-sm leading-relaxed whitespace-pre-wrap ${
-                    msg.sender === "user"
-                      ? "bg-violet-700 text-white rounded-br-xs"
-                      : "bg-[#F8FAFC] dark:bg-[#1e293b] text-[#0F172A] dark:text-slate-100 border border-[#E2E8F0] dark:border-slate-700 rounded-bl-xs"
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              </div>
-            ))}
-            {isBotTyping && (
-              <div className="flex gap-2.5 items-center text-xs text-[#64748B] dark:text-slate-400">
-                <div className="w-7 h-7 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0">
-                  <Sparkles className="w-3.5 h-3.5" />
-                </div>
-                <div className="p-3 rounded-2xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-bounce" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-bounce [animation-delay:0.2s]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-bounce [animation-delay:0.4s]" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Chat Input */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendChatMessage();
-            }}
-            className="flex items-center gap-2 pt-2 border-t border-[#E2E8F0] dark:border-slate-800"
-          >
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder={isUz ? "AI stilistga savolingizni yozing..." : "Напишите вопрос AI стилисту..."}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 text-xs sm:text-sm text-[#0F172A] dark:text-white placeholder-[#94A3B8] focus:outline-none focus:border-violet-600"
-            />
-            <button
-              type="submit"
-              disabled={isBotTyping || !chatInput.trim()}
-              className="px-4 py-2.5 rounded-xl bg-violet-700 hover:bg-violet-800 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-violet-700/20"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{isUz ? "Yuborish" : "Отправить"}</span>
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* AI NEURAL SCANNING OVERLAY */}
-      {isScanning && (
-        <div className="p-6 rounded-3xl bg-violet-950/20 border border-violet-500/30 text-center space-y-3 animate-fade-in backdrop-blur-xs">
-          <div className="w-12 h-12 rounded-2xl bg-violet-700 text-white flex items-center justify-center mx-auto shadow-lg shadow-violet-700/30 animate-pulse">
-            <Sparkles className="w-6 h-6 animate-spin" style={{ animationDuration: "4s" }} />
-          </div>
-          <div className="space-y-1">
-            <h4 className="font-black text-sm text-[#0F172A] dark:text-white">
-              {isUz ? "AI Stilist tahlil qilmoqda..." : "AI Стилист анализирует гардероб..."}
-            </h4>
-            <p className="text-xs text-violet-700 dark:text-violet-400 font-mono animate-pulse">
-              {scanSteps[scanStepIndex]}
-            </p>
-          </div>
-          <div className="w-48 h-1.5 bg-violet-200 dark:bg-violet-950 rounded-full mx-auto overflow-hidden">
-            <div
-              className="h-full bg-violet-600 rounded-full transition-all duration-300"
-              style={{ width: `${(scanStepIndex + 1) * 33}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          3. AI INSIGHT HEADER: MATCH SCORE + COLOR PALETTE + STYLIST NOTE
-          ======================================================== */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 shadow-[0_4px_25px_rgba(109,40,217,0.06)] dark:shadow-xl space-y-4">
-        {/* Top bar: Scenario Title + Match Score badge */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0] dark:border-slate-800">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{scenarioConfig.emoji}</span>
-              <h2 className="text-base sm:text-lg font-black text-[#0F172A] dark:text-white">
-                {isUz ? scenarioConfig.titleUz : scenarioConfig.titleRu}
-              </h2>
-            </div>
-            <p className="text-xs text-[#64748B] dark:text-slate-400">
-              {isUz ? scenarioConfig.subtitleUz : scenarioConfig.subtitleRu}
+            <p className="text-xs sm:text-sm text-zinc-300 max-w-2xl leading-relaxed">
+              {isUz
+                ? "Kiyinish uslublari, ranglar uyg'unligi, o'lcham tanlash, 20 ta mahsulot katalogi, Toshkentdagi filiallar va dostavka bo'yicha to'liq onlayn maslahat."
+                : "Консультация по стилю, подбор размера, сочетания цветов, адреса 3 филиалов в Ташкенте и быстрая доставка."}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            {/* Match Score Badge */}
-            <div className="px-3 py-1.5 rounded-2xl bg-violet-500/15 border border-violet-500/30 text-violet-700 dark:text-violet-400 font-mono font-black text-sm flex items-center gap-1.5 shadow-xs">
-              <Flame className="w-4 h-4 text-violet-600 fill-violet-600" />
-              <span>{matchScore}% Moslik</span>
-            </div>
-
-            {/* Randomize outfit button */}
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
             <button
               type="button"
-              onClick={handleRandomizeAll}
-              className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#64748B] dark:text-slate-400 hover:text-violet-700 dark:hover:text-violet-400 transition-colors cursor-pointer"
-              title={isUz ? "Obrazni qayta saralash" : "Случайный подбор"}
+              onClick={handleResetChat}
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-all flex items-center gap-2 cursor-pointer active:scale-95 shadow-sm"
+              title={isUz ? "Suhbatni tozalash" : "Очистить диалог"}
             >
-              <RefreshCw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{isUz ? "Yangi suhbat" : "Новый диалог"}</span>
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Color Palette Harmonizer */}
-        <div className="space-y-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400 flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
-            <span>{isUz ? "Ranglar Uyg'unligi Nazariyasi (Color Harmony):" : "Цветовая гармония:"}</span>
+      {/* 2. Quick Question Chips (Horizontal scrollable & categorized) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+            <span>{isUz ? "Tezkor maslahat mavzulari:" : "Популярные вопросы:"}</span>
           </span>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {scenarioConfig.palette.map((p, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-2.5 p-2 rounded-xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700"
-              >
-                <span
-                  className="w-5 h-5 rounded-full shrink-0 shadow-xs border border-white/20"
-                  style={{ backgroundColor: p.hex }}
-                />
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-[#0F172A] dark:text-white block truncate">
-                    {isUz ? p.nameUz : p.nameRu}
-                  </span>
-                  <span className="text-[10px] text-[#64748B] dark:text-slate-400 block font-medium">
-                    {isUz ? p.roleUz : p.roleRu}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <span className="text-[11px] text-[#94A3B8]">
+            {isUz ? "1-bosishda javob oling" : "Кликните для ответа"}
+          </span>
         </div>
 
-        {/* Stylist's Editorial Note */}
-        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-indigo-500/10 border border-violet-500/20 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-black text-violet-700 dark:text-violet-400">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{isUz ? "BUTTON Bosh Stilisti Xulosasi:" : "Экспертное заключение стилиста:"}</span>
-          </div>
-          <p className="text-xs text-[#0F172A] dark:text-slate-300 leading-relaxed">
-            {isUz ? scenarioConfig.stylistNoteUz : scenarioConfig.stylistNoteRu}
-          </p>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar -mx-1 px-1">
+          {quickPrompts.map((item, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleSendMessage(isUz ? item.titleUz : item.titleRu)}
+              className="px-3.5 py-2 rounded-2xl bg-white dark:bg-[#0f172a] hover:bg-violet-50 dark:hover:bg-violet-950/40 text-xs font-semibold text-[#0F172A] dark:text-white border border-[#E2E8F0] dark:border-slate-800 hover:border-violet-500/40 transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-xs flex items-center gap-2 group active:scale-95"
+            >
+              <span className="text-sm group-hover:scale-110 transition-transform">{item.emoji}</span>
+              <span>{isUz ? item.titleUz : item.titleRu}</span>
+            </button>
+          ))}
         </div>
-
-        {/* Customer Size Match Banner */}
-        {measurements?.standardSize && (
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-xs">
-            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>
-                {isUz
-                  ? `Sizning razmeringiz (${preferredSize}) bo'yicha Beruniy filialida barcha buyumlar mavjud!`
-                  : `Все позиции доступны в вашем размере (${preferredSize}) в филиале Беруни!`}
-              </span>
-            </div>
-            <span className="font-mono text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400">
-              100% Fit
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* ========================================================
-          4. LOOK STUDIO: 4 INTERACTIVE GARMENT LAYERS
-          ======================================================== */}
-      {products.length === 0 ? (
-        <div className="p-10 text-center rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 space-y-3 shadow-sm dark:shadow-xl">
-          <Sparkles className="w-10 h-10 text-violet-600 mx-auto opacity-50 animate-pulse" />
-          <h3 className="font-bold text-sm text-[#0F172A] dark:text-white">
-            {isUz ? "Hozircha mahsulotlar mavjud emas" : "Товары пока не добавлены"}
-          </h3>
-          <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-sm mx-auto">
-            {isUz
-              ? "Katalogga yangi kiyimlar joylanishi bilan AI Stilist sizga tayyor obrazlarni tanlab beradi."
-              : "После добавления товаров в каталог AI Стилист подберет готовые образы."}
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-sm sm:text-base text-[#0F172A] dark:text-white flex items-center gap-2">
-                <Layers className="w-4 h-4 text-violet-700 dark:text-violet-400" />
-                <span>{isUz ? "Look Studio: Boshdan-Oyoq 4 Qavat" : "Студия образов: 4 слоя гардероба"}</span>
-              </h3>
-
-              <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setViewStyle("stack")}
-                  className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                    viewStyle === "stack" ? "bg-violet-700 text-white" : "text-[#64748B] dark:text-slate-400"
-              }`}
-            >
-              {isUz ? "Qatlamlar" : "Слои"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewStyle("grid")}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                viewStyle === "grid" ? "bg-violet-700 text-white" : "text-[#64748B] dark:text-slate-400"
-              }`}
-            >
-              {isUz ? "Katalog" : "Сетка"}
-            </button>
-          </div>
-        </div>
-
-        {/* 4 Garments List / Mannequin Stack */}
-        <div
-          className={
-            viewStyle === "grid"
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"
-              : "space-y-3"
-          }
-        >
-          {[
-            {
-              layerNameUz: "1. Ustki Kiyim",
-              layerNameRu: "1. Верхняя Одежда",
-              badgeUz: "Kostyum / Kurtka",
-              badgeRu: "Костюм / Куртка",
-              item: outerItem,
-              index: outerIndex,
-              setIndex: setOuterIndex,
-              pool: currentPools.outer,
-            },
-            {
-              layerNameUz: "2. Ichki Qatlam",
-              layerNameRu: "2. Внутренний Слой",
-              badgeUz: "Polo / Xudi / Ko'ylak",
-              badgeRu: "Поло / Худи / Рубашка",
-              item: topItem,
-              index: topIndex,
-              setIndex: setTopIndex,
-              pool: currentPools.top,
-            },
-            {
-              layerNameUz: "3. Pastki Kiyim",
-              layerNameRu: "3. Брюки & Низ",
-              badgeUz: "Klassik shim / Chino",
-              badgeRu: "Классика / Чинос",
-              item: bottomItem,
-              index: bottomIndex,
-              setIndex: setBottomIndex,
-              pool: currentPools.bottom,
-            },
-            {
-              layerNameUz: "4. Poyabzal & Aksessuar",
-              layerNameRu: "4. Обувь & Аксессуары",
-              badgeUz: "Lofer / Tufli / Kamar",
-              badgeRu: "Лоферы / Туфли",
-              item: shoesItem,
-              index: shoesIndex,
-              setIndex: setShoesIndex,
-              pool: currentPools.footwear,
-            },
-          ].map((layer, idx) => {
-            const currentItem = layer.item;
+      {/* 3. Main Chat Stream Container */}
+      <div className="rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 shadow-xl overflow-hidden flex flex-col h-[580px] sm:h-[620px]">
+        {/* Chat Messages Feed */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
+          {chatMessages.map((msg) => {
+            const isBot = msg.sender === "bot";
+            const recommendedProducts = msg.recommendedProductIds
+              ? products.filter((p) => msg.recommendedProductIds?.includes(p.id))
+              : [];
 
             return (
               <div
-                key={idx}
-                className="p-3 sm:p-4 rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 hover:border-violet-600/40 transition-all shadow-xs group"
+                key={msg.id}
+                className={`flex gap-3 animate-fade-in ${isBot ? "justify-start" : "justify-end"}`}
               >
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#E2E8F0] dark:border-slate-800 text-xs">
-                  <span className="font-bold text-[#0F172A] dark:text-white flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-violet-600 shrink-0" />
-                    <span>{isUz ? layer.layerNameUz : layer.layerNameRu}</span>
-                  </span>
-                  <span className="text-[10px] font-mono text-[#64748B] dark:text-slate-400 font-semibold">
-                    {layer.index % layer.pool.length + 1} / {layer.pool.length}
-                  </span>
-                </div>
+                {/* Bot Avatar */}
+                {isBot && (
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-tr from-violet-700 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-violet-700/25 mt-0.5">
+                    <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                )}
 
-                <div className="flex items-center gap-3.5">
-                  {/* Product Thumbnail */}
+                <div className={`space-y-2.5 max-w-[88%] sm:max-w-[78%] ${isBot ? "items-start" : "items-end"}`}>
+                  {/* Bubble Content */}
                   <div
-                    onClick={() => onSelectProduct(currentItem)}
-                    className="relative w-20 h-24 sm:w-24 sm:h-28 rounded-2xl bg-[#F8FAFC] dark:bg-[#1e293b] overflow-hidden border border-[#E2E8F0] dark:border-slate-700 shrink-0 cursor-pointer group-hover:scale-102 transition-transform"
+                    className={`p-4 sm:p-5 rounded-3xl text-xs sm:text-sm shadow-xs relative group ${
+                      isBot
+                        ? "bg-[#F8FAFC] dark:bg-[#1e293b]/90 text-[#0F172A] dark:text-slate-100 border border-[#E2E8F0] dark:border-slate-700/80 rounded-tl-sm"
+                        : "bg-gradient-to-r from-violet-700 via-indigo-600 to-violet-700 text-white rounded-tr-sm shadow-md shadow-violet-700/20"
+                    }`}
                   >
-                    <Image
-                      src={currentItem.image}
-                      alt={currentItem.name}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                    {currentItem.badge && (
-                      <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-violet-700 text-white font-black text-[9px] uppercase tracking-wider">
-                        {currentItem.badge}
-                      </span>
+                    {renderFormattedText(msg.text)}
+
+                    {/* Copy text action for bot responses */}
+                    {isBot && (
+                      <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-[11px] text-[#94A3B8]">
+                        <span className="font-mono text-[10px]">{msg.time}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyText(msg.text, msg.id)}
+                          className="flex items-center gap-1 hover:text-violet-600 dark:hover:text-violet-400 transition-colors cursor-pointer"
+                          title={isUz ? "Nusxa olish" : "Копировать"}
+                        >
+                          {copiedId === msg.id ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-500" />
+                              <span className="text-emerald-500 font-bold">{isUz ? "Nusxalandi" : "Скопировано"}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span>{isUz ? "Nusxalash" : "Копировать"}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {!isBot && (
+                      <div className="flex justify-end pt-1 text-[10px] text-violet-200 font-mono">
+                        {msg.time}
+                      </div>
                     )}
                   </div>
 
-                  {/* Details & Swapping Controls */}
-                  <div className="flex-1 min-w-0 space-y-1.5">
-                    <div
-                      onClick={() => onSelectProduct(currentItem)}
-                      className="cursor-pointer"
-                    >
-                      <h4 className="font-black text-xs sm:text-sm text-[#0F172A] dark:text-white truncate group-hover:text-violet-700 dark:group-hover:text-violet-400 transition-colors">
-                        {isUz ? currentItem.name : currentItem.nameRu || currentItem.name}
-                      </h4>
-                      <p className="text-[10px] text-[#64748B] dark:text-slate-400 line-clamp-1">
-                        {isUz ? layer.badgeUz : layer.badgeRu}
-                      </p>
+                  {/* Recommended Products Embed (If matched) */}
+                  {isBot && recommendedProducts.length > 0 && (
+                    <div className="p-3 rounded-2xl bg-violet-50/70 dark:bg-violet-950/20 border border-violet-200/60 dark:border-violet-800/40 space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-violet-700 dark:text-violet-300">
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>{isUz ? "Maslahatga mos do'kondagi kiyimlar:" : "Товары из рекомендации:"}</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {recommendedProducts.map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={() => onSelectProduct(p)}
+                            className="p-2 rounded-xl bg-white dark:bg-[#0f172a] border border-violet-100 dark:border-slate-800 flex items-center gap-2 hover:border-violet-500 transition-all cursor-pointer shadow-xs group"
+                          >
+                            <div className="w-10 h-10 rounded-lg relative overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
+                              <Image src={p.image} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-[11px] font-bold text-[#0F172A] dark:text-white truncate">
+                                {p.name}
+                              </h4>
+                              <p className="text-[10px] font-mono text-violet-600 dark:text-violet-400 font-bold">
+                                {formatUzbekCurrency(p.price)}
+                              </p>
+                            </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-violet-600 transition-colors shrink-0" />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-
-                    {/* Admin Price Display */}
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-mono font-black text-sm sm:text-base text-violet-700 dark:text-violet-400">
-                        {formatUzbekCurrency(currentItem.price)}
-                      </span>
-                      {currentItem.oldPrice && (
-                        <span className="text-[11px] text-[#94A3B8] line-through font-mono">
-                          {formatUzbekCurrency(currentItem.oldPrice)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* ◀ Boshqasi ▶ Swapper Controls */}
-                    <div className="flex items-center gap-1.5 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => layer.setIndex((prev) => (prev - 1 + layer.pool.length) % layer.pool.length)}
-                        className="p-1.5 rounded-xl bg-[#F1F5F9] dark:bg-[#1e293b] hover:bg-[#E2E8F0] dark:hover:bg-slate-700 border border-[#E2E8F0] dark:border-slate-700 text-[#64748B] dark:text-slate-300 transition-colors cursor-pointer"
-                        title={isUz ? "Oldingisi" : "Предыдущий"}
-                      >
-                        <ChevronLeft className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => layer.setIndex((prev) => (prev + 1) % layer.pool.length)}
-                        className="flex-1 py-1 px-2 rounded-xl bg-[#F1F5F9] dark:bg-[#1e293b] hover:bg-[#E2E8F0] dark:hover:bg-slate-700 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white text-[11px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                      >
-                        <RefreshCw className="w-3 h-3 text-violet-600 dark:text-violet-400" />
-                        <span>{isUz ? "Boshqasiga almashtirish" : "Заменить вещь"}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => layer.setIndex((prev) => (prev + 1) % layer.pool.length)}
-                        className="p-1.5 rounded-xl bg-[#F1F5F9] dark:bg-[#1e293b] hover:bg-[#E2E8F0] dark:hover:bg-slate-700 border border-[#E2E8F0] dark:border-slate-700 text-[#64748B] dark:text-slate-300 transition-colors cursor-pointer"
-                        title={isUz ? "Keyingisi" : "Следующий"}
-                      >
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             );
           })}
-        </div>
-      </div>
 
-      {/* ========================================================
-          5. TRANSPARENT PRICE SUMMARY & ACTION BUTTONS
-          ======================================================== */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#0f172a] border border-[#E2E8F0] dark:border-slate-800 shadow-xl space-y-4">
-        {/* Transparent Admin Price Breakdown */}
-        <div className="space-y-2 pb-3 border-b border-[#E2E8F0] dark:border-slate-800">
-          <div className="flex items-center justify-between text-xs text-[#64748B] dark:text-slate-400">
-            <span>{isUz ? "Kiyimlar narxi (Admin belgilagan summa):" : "Цена по каталогу (сумма товаров):"}</span>
-            <span className="font-mono font-bold text-[#0F172A] dark:text-white">
-              {formatUzbekCurrency(totalPrice)}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 font-bold">
-            <span className="flex items-center gap-1">
-              <span>🎉</span>
-              <span>
-                {isUz
-                  ? `To'liq obraz maxsus chegirmasi (-${comboDiscountPercent}%):`
-                  : `Скидка на полный образ (-${comboDiscountPercent}%):`}
-              </span>
-            </span>
-            <span className="font-mono">- {formatUzbekCurrency(savedAmount)}</span>
-          </div>
-
-          <div className="flex items-baseline justify-between pt-1">
-            <div>
-              <span className="text-xs text-[#64748B] dark:text-slate-400 block font-semibold">
-                {isUz ? "Yakuniy to'plam narxi:" : "Итого за весь образ:"}
-              </span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                {isUz ? `Tejamkorligingiz: ${formatUzbekCurrency(savedAmount)}` : `Вы экономите: ${formatUzbekCurrency(savedAmount)}`}
-              </span>
-            </div>
-            <span className="font-mono font-black text-xl sm:text-2xl text-violet-700 dark:text-violet-400">
-              {formatUzbekCurrency(discountedPrice)}
-            </span>
-          </div>
-        </div>
-
-        {/* Action Buttons: Add All to Cart & Branch Reserve */}
-        <div className="flex flex-col sm:flex-row items-stretch gap-3">
-          <button
-            type="button"
-            onClick={handleAddAllToCart}
-            disabled={addedAllSuccess}
-            className={`flex-1 py-3.5 px-6 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-98 ${
-              addedAllSuccess
-                ? "bg-emerald-600 text-white shadow-emerald-600/25"
-                : "bg-violet-700 hover:bg-violet-800 text-white shadow-violet-700/25"
-            }`}
-          >
-            {addedAllSuccess ? (
-              <>
-                <Check className="w-5 h-5 stroke-[3]" />
-                <span>{isUz ? "4 ta kiyim savatga qo'shildi!" : "4 вещи добавлены в корзину!"}</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
-                <span>
-                  {isUz
-                    ? `⚡ Butun Obrazni Savatga Olish (-${comboDiscountPercent}%)`
-                    : `Купить весь образ со скидкой (-${comboDiscountPercent}%)`}
+          {/* Typing Indicator */}
+          {isBotTyping && (
+            <div className="flex gap-3 items-center animate-fade-in">
+              <div className="w-8 h-8 rounded-2xl bg-gradient-to-tr from-violet-700 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: "3s" }} />
+              </div>
+              <div className="px-4 py-3 rounded-2xl bg-[#F8FAFC] dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 flex items-center gap-2">
+                <span className="text-xs font-semibold text-[#64748B] dark:text-slate-400">
+                  {isUz ? "AI stilist tahlil qilmoqda" : "AI стилист думает"}
                 </span>
-              </>
-            )}
-          </button>
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-bounce" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-bounce [animation-delay:0.2s]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-bounce [animation-delay:0.4s]" />
+                </span>
+              </div>
+            </div>
+          )}
 
-          <button
-            type="button"
-            onClick={handleReserveInBranch}
-            className="py-3.5 px-5 rounded-2xl bg-[#F8FAFC] dark:bg-[#1e293b] hover:bg-[#F1F5F9] dark:hover:bg-slate-700 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98"
-          >
-            <Store className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-            <span>
-              {reservedSuccess
-                ? isUz ? "✅ 2 soatga band qilindi!" : "✅ Забронировано на 2 часа!"
-                : isUz ? "Filialda bepul kiyib ko'rish" : "Примерить в шоуруме"}
-            </span>
-          </button>
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* Reassurance Features */}
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#E2E8F0] dark:border-slate-800 text-[10px] text-center text-[#64748B] dark:text-slate-400">
-          <div className="space-y-0.5">
-            <span className="block font-bold text-[#0F172A] dark:text-white">🛡️ Kafolat</span>
-            <span>{isUz ? "Razmer 3 kunda almashtiriladi" : "Обмен 3 дня"}</span>
-          </div>
-          <div className="space-y-0.5">
-            <span className="block font-bold text-[#0F172A] dark:text-white">📍 4 ta Filial</span>
-            <span>{isUz ? "Bugun kelib kiyib ko'ring" : "Примерка сегодня"}</span>
-          </div>
-          <div className="space-y-0.5">
-            <span className="block font-bold text-[#0F172A] dark:text-white">🚀 2-3 soatda</span>
-            <span>{isUz ? "Toshkent bo'ylab yetkazish" : "Доставка по Ташкенту"}</span>
-          </div>
+        {/* 4. Chat Input Bar */}
+        <div className="p-3 sm:p-4 bg-slate-50/90 dark:bg-slate-900/90 border-t border-[#E2E8F0] dark:border-slate-800">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSendMessage();
+            }}
+            className="flex items-center gap-2 max-w-4xl mx-auto"
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder={
+                isUz
+                  ? "AI stilistga savolingizni yozing (masalan: To'yga nima kiysam bo'ladi?)..."
+                  : "Напишите вопрос стилисту (например: Что надеть на свадьбу?)..."
+              }
+              className="flex-1 px-4 py-3 rounded-2xl bg-white dark:bg-[#1e293b] border border-[#E2E8F0] dark:border-slate-700 text-xs sm:text-sm text-[#0F172A] dark:text-white placeholder:text-[#94A3B8] focus:outline-none focus:border-violet-600 shadow-xs"
+            />
+
+            <button
+              type="submit"
+              disabled={isBotTyping || !chatInput.trim()}
+              className="px-4 sm:px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-700 via-indigo-600 to-violet-700 hover:from-violet-600 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-violet-700/25 transition-all cursor-pointer active:scale-95 whitespace-nowrap"
+            >
+              <Send className="w-4 h-4" />
+              <span className="hidden sm:inline">{isUz ? "Yuborish" : "Отправить"}</span>
+            </button>
+          </form>
         </div>
       </div>
-    </>
-  )}
-</div>
+    </div>
   );
 };
+
+export default AiModeSection;

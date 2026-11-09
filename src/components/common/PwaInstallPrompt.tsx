@@ -35,6 +35,7 @@ export default function PwaInstallPrompt({
   const promptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   const [showPrompt, setShowPrompt] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isStandaloneApp, setIsStandaloneApp] = useState(false);
   const [isIos, setIsIos] = useState(false);
@@ -172,8 +173,8 @@ export default function PwaInstallPrompt({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  // If already opened inside installed app, don't show prompts
-  if (isStandaloneApp) return null;
+  // If already opened inside installed app or dismissed by user in this session, don't show prompts
+  if (isStandaloneApp || isDismissed) return null;
 
   return (
     <>
@@ -237,9 +238,12 @@ export default function PwaInstallPrompt({
               </button>
               <button
                 type="button"
-                onClick={() => setIsMinimized(true)}
+                onClick={() => {
+                  setIsDismissed(true);
+                  setShowPrompt(false);
+                }}
                 className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                title={isRu ? "Свернуть" : "Kichraytirish"}
+                title={isRu ? "Закрыть" : "Yopish"}
               >
                 <X className="w-4 h-4" />
               </button>
