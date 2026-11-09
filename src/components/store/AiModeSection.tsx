@@ -199,6 +199,11 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
           text: m.text,
         }));
 
+      const localGeminiKey =
+        typeof window !== "undefined"
+          ? localStorage.getItem("button_gemini_api_key") || settings?.geminiApiKey || ""
+          : settings?.geminiApiKey || "";
+
       const res = await fetch("/api/ai-assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -207,10 +212,14 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
           message: textToSend,
           history: historyPayload,
           lang,
+          geminiApiKey: localGeminiKey,
         }),
       });
 
       const data = await res.json();
+      if (data.savedApiKey && typeof window !== "undefined") {
+        localStorage.setItem("button_gemini_api_key", data.savedApiKey);
+      }
       const replyText =
         data.reply ||
         (isUz

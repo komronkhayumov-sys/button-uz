@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSettings, getProducts } from "@/lib/storage";
+import { getSettings, saveSettings, getProducts } from "@/lib/storage";
 
 export type AssistantRequest = {
   message?: string;
@@ -8,6 +8,7 @@ export type AssistantRequest = {
   weight?: number; // kg
   category?: string;
   lang?: "uz" | "ru";
+  geminiApiKey?: string;
   history?: Array<{ sender: "user" | "bot"; text: string }>;
 };
 
@@ -50,9 +51,19 @@ function calculateMenSize(height: number, weight: number, category?: string): {
   }
 
   // Adjust for tall and slim or short and broad
-  if (height > 185 && weight < 75) {
-    apparelSize = "L (Slim Fit)";
-    suitSize = "48-50 (uzun bo'y)";
+  if (height >= 185 && weight < 78) {
+    apparelSize = "L (Slim Fit / Uzun bichim)";
+    suitSize = "50 (uzun bo'y)";
+  } else if (height >= 190) {
+    if (weight < 85) {
+      apparelSize = "XL (Uzun bichim)";
+      suitSize = "52 (uzun bo'y)";
+      pantsSize = "33-34";
+    } else {
+      apparelSize = "2XL-3XL";
+      suitSize = "54-56";
+      pantsSize = "36-38";
+    }
   } else if (height < 170 && weight > 85) {
     apparelSize = "XL-2XL (Erkin bichim)";
     suitSize = "52-54";
@@ -79,6 +90,7 @@ function extractHeightAndWeight(text: string): { height?: number; weight?: numbe
   let height: number | undefined;
   let weight: number | undefined;
 
+  // Pattern: "bo'yim 180 sm vaznim 78 kg" or "180/78"
   const hwMatch = clean.match(/(?:bo['`’]?y(?:im)?\s*[:=]?\s*(\d{2,3})|(\d{2,3})\s*(?:sm|см))\s*.*?(?:vazn(?:im)?\s*[:=]?\s*(\d{2,3})|(\d{2,3})\s*(?:kg|кг))/i);
   if (hwMatch) {
     height = Number(hwMatch[1] || hwMatch[2]);
@@ -91,8 +103,37 @@ function extractHeightAndWeight(text: string): { height?: number; weight?: numbe
     }
   }
 
-  if (height && weight && height >= 140 && height <= 220 && weight >= 40 && weight <= 180) {
+  if (height && weight && height >= 140 && height <= 225 && weight >= 40 && weight <= 180) {
     return { height, weight };
+  }
+  return null;
+}
+
+// Extract single height if weight is not specified
+function extractSingleHeight(text: string): number | null {
+  const clean = text.toLowerCase();
+  // "bo'yim 196", "boyim 196", "196 sm", "rost 196"
+  const match = clean.match(/(?:bo['`’]?y(?:im)?|rost|рост)\s*[:=]?\s*(\d{2,3})/i) ||
+                clean.match(/\b(1[4-9]\d|2[0-2]\d)\s*(?:sm|см)\b/i);
+  if (match) {
+    const val = Number(match[1]);
+    if (val >= 140 && val <= 225) return val;
+  }
+  // Single number like "196" if query is short
+  if (/^\s*(1[4-9]\d|2[0-2]\d)\s*$/.test(clean)) {
+    return Number(clean.trim());
+  }
+  return null;
+}
+
+// Extract single weight if height is not specified
+function extractSingleWeight(text: string): number | null {
+  const clean = text.toLowerCase();
+  const match = clean.match(/(?:vazn(?:im)?|ves|вес)\s*[:=]?\s*(\d{2,3})/i) ||
+                clean.match(/\b(\d{2,3})\s*(?:kg|кг)\b/i);
+  if (match) {
+    const val = Number(match[1]);
+    if (val >= 40 && val <= 180) return val;
   }
   return null;
 }
@@ -104,6 +145,28 @@ export async function POST(req: NextRequest) {
     const isUz = lang === "uz";
     const userMessage = body.message?.trim() || "";
     const lowerMsg = userMessage.toLowerCase();
+
+    // Check if the user pasted an AI Studio API key directly into the chat:
+    const apiKeyMatch = userMessage.match(/\b(AIzaSy[A-Za-z0-9_-]{33})\b/);
+    if (apiKeyMatch) {
+      const detectedKey = apiKeyMatch[1];
+      try {
+        await saveSettings({ geminiApiKey: detectedKey });
+      } catch (e) {
+        console.warn("Could not save settings:", e);
+      }
+      return NextResponse.json({
+        success: true,
+        reply: isUz
+          ? `🎉 **Google Gemini API kaliti qabul qilindi va muvaffaqiyatli saqlandi!**\n\n` +
+            `Haqiqiy jonli Google Gemini generativ sun'iy intellekti faollashdi 🤖✨\n\n` +
+            `Endi siz men bilan xuddi ChatGPT / Gemini kabi har qanday mavzuda erkin suhbatlashishingiz, kiyimlar va obrazlar haqida so'rashingiz mumkin. Savolingizni yozing!`
+          : `🎉 **Google Gemini API ключ успешно сохранен!**\n\n` +
+            `Активирован реальный живой генеративный AI Google Gemini 🤖✨ Задайте мне любой вопрос!`,
+        savedApiKey: detectedKey,
+        provider: "gemini-activated",
+      });
+    }
 
     // 1. Direct Size Recommendation Flow
     if (body.type === "size_recommendation" && body.height && body.weight) {
@@ -118,7 +181,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Check if freeform text has height & weight
+    // Check if freeform text has both height & weight
     const extractedHW = extractHeightAndWeight(lowerMsg);
     if (extractedHW && extractedHW.height && extractedHW.weight) {
       const calculation = calculateMenSize(extractedHW.height, extractedHW.weight);
@@ -143,34 +206,35 @@ export async function POST(req: NextRequest) {
       .map((p) => `• ${p.name} — ${p.price.toLocaleString("uz-UZ")} so'm (O'lchamlar: ${p.sizes.join(", ")}, Kategoriya: ${p.category})`)
       .join("\n");
 
-    // 3. Check for GEMINI API KEY (from environment variable or store settings)
-    const geminiKey = process.env.GEMINI_API_KEY?.trim() || settings.geminiApiKey?.trim();
+    // 3. Resolve GEMINI API KEY (from client payload, headers, env, or store settings)
+    const geminiKey =
+      body.geminiApiKey?.trim() ||
+      req.headers.get("x-gemini-key")?.trim() ||
+      process.env.GEMINI_API_KEY?.trim() ||
+      settings.geminiApiKey?.trim();
 
     if (geminiKey) {
       try {
         const systemInstruction = `
-Siz ${settings.storeName} (${settings.storeHandle}) erkaklar kiyimlari do'konining haqiqiy, aqlli, do'stona va tajribali professional AI stilist maslahatchisisiz.
-Foydalanuvchi siz bilan erkin muloqot qiladi (salomlashish, hazil, kiyim tanlash, tadbirlar, o'lcham, narx, manzil va h.k.).
-Har qanday savolga insondek, samimiy, xushmuomala, jonli va professional javob bering.
+Siz ${settings.storeName} (${settings.storeHandle}) erkaklar kiyimlari do'konining professional, aqlli va do'stona AI stilist maslahatchisisiz.
+Foydalanuvchi siz bilan xuddi insondek erkin suhbatlashadi. Har qanday savolga (hazil, salomlashish, o'lcham, kiyim tanlash, tadbirlar, narxlar, manzil va h.k.) jonli, samimiy va chiroyli javob bering.
 
 Qoidalaringiz:
-1. Agar foydalanuvchi biror tadbirga (masalan do'stining tug'ilgan kuni, bazm, vecher, to'y, ofis, romantik kecha, shahar aylanish) nima kiyishni so'rasa, tadbirga mos mukammal obraz va ranglar uyg'unligini tuzib bering va BUTTON do'konidagi kiyimlarni (kardigan, bomber, jinsi, chinos, Oxford ko'ylak, zamsh lofer, krossovka, jiletka, chelsea etik) tavsiya qiling.
-2. Agar foydalanuvchi "nimalar qila olasan" deb so'rasa, imkoniyatlaringizni to'liq, chiroyli va qiziqarli sanab bering.
-3. Agar foydalanuvchi "sen jonlimisan", "odammsanmi" yoki "kim bu" deb so'rasa, o'zingizni BUTTON Men's Wear do'koni uchun yaratilgan sun'iy intellekt (AI) stilisti ekanligingizni xushmuomala tushuntiring.
-4. Agar foydalanuvchi salomlashsa ("salom", "assalomu alaykum", "qalaysan"), samimiy salomlashib, bugun qanday kiyim yoki maslahat kerakligini so'rang.
-5. Agar foydalanuvchi bo'yi va vaznini aytsa, aniq o'lchamlarni hisoblab bering (S, M, L, XL, 2XL; shimlar 29-36).
-6. Do'kon ma'lumotlari:
+1. Agar bo'y aytsa (masalan bo'yim 196 sm), baland bo'yli erkaklar uchun kiyim tavsiyalarini (XL-2XL, uzun bichimli ko'ylaklar, to'g'ri bichimli jinsi) bering va vaznini so'rang.
+2. Agar rasm generatsiya so'rasa, to'g'ridan-to'g'ri yangi rasm chiza olmasligingizni, lekin BUTTON katalogidagi 20+ turdagi haqiqiy kiyimlar fotosuratlarini va obrazlarini ko'rsatib bera olishingizni ayting.
+3. Agar "qaysi AI" yoki "kim bu" deb so'rasa, Google Gemini generativ modeli asosida ishlovchi BUTTON Men's Wear AI stilisti ekanligingizni ayting.
+4. Tadbirlar (bazm, to'y, tug'ilgan kun, ofis) uchun do'kondagi kiyimlardan (kardigan, bomber, jinsi, chinos, Oxford ko'ylak, zamsh lofer, krossovka, jiletka) boshdan-oyoq mukammal obraz tuzib bering.
+5. Do'kon ma'lumotlari:
 - Do'kon: ${settings.storeName} (${settings.storeHandle})
 - Filiallar: ${branchesList}
-- Ish vaqti: ${settings.workingHoursUz} (Har kuni 10:00 dan 22:00 gacha, dam olishsiz).
+- Ish vaqti: ${settings.workingHoursUz} (Har kuni 10:00 dan 22:00 gacha).
 - Telefonlar: ${settings.phone1}, ${settings.phone2}. Telegram: @button_uzbekistan, Instagram: @button_uz.
-- Yetkazib berish: Toshkent bo'ylab 1-3 soatda (Yandex/BTS), barcha viloyatlarga 1-2 kunda pochta orqali.
+- Yetkazib berish: Toshkent bo'ylab 1-3 soatda (Yandex/BTS), viloyatlarga 1-2 kunda pochta orqali.
 - To'lov: Click, Payme, Uzum, Uzcard, Humo, naqd pul.
-- Almashtirish: O'lcham to'g'ri kelmasa 3 kun ichida filialda almashtirib beriladi.
 - Mahsulotlar:
 ${catalogSummary}
 
-Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. O'zbek tilida erkin, jonli, tabiiy va punktlar bilan chiroyli formatda javob bering.
+Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda erkin, jonli, samimiy va chiroyli formatda javob bering.
 `.trim();
 
         // Build multi-turn contents
@@ -192,7 +256,6 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           parts: [{ text: userMessage }],
         });
 
-        // 7-second abort controller so it never hangs serverless
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 7000);
 
@@ -241,8 +304,95 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
     // 4. Comprehensive Conversational & Styling AI Engine (Zero Generic Boilerplate)
     let reply = "";
 
-    // A. NIMALAR QILA OLASAN / QOBILIYAT / IMKONIYATLAR / VAZIFANG
-    if (
+    // A. SINGLE HEIGHT (e.g. "boyim 196", "bo'yim 185", "196 sm")
+    const singleHeight = extractSingleHeight(lowerMsg);
+    if (singleHeight) {
+      if (singleHeight >= 190) {
+        reply = isUz
+          ? `Sizning bo'yingiz **${singleHeight} sm** — bu juda baland va ko'rkam bo'y! 🔝\n\n` +
+            `Baland bo'yli erkaklar uchun kiyim tanlash bo'yicha muhim tavsiyalarimiz:\n\n` +
+            `• 👕 **Kardigan va ko'ylaklar:** Yenglari va bel qismi kalta bo'lib qolmasligi uchun kamida **XL** yoki **2XL** o'lcham ma'qul. Do'konimizdagi **Oksford uzun yengli paxta ko'ylak** (250,000 so'm) va **Klassik zamokli trikotaj kardigan** (280,000 so'm) baland qomatda juda nufuzli turadi.\n` +
+            `• 🧥 **Kurtkalar:** **Yengil bahor-kuzgi bomber kurtka** (420,000 so'm, XL-2XL) elkalarni keng va proporsional ko'rsatadi.\n` +
+            `• 👖 **Shim va Jinsilar:** To'g'ri bichimli **Klassik to'g'ri bichimli jinsi shim** (320,000 so'm, 33-36 razmerlar) uzun bo'yga ideal tushadi.\n\n` +
+            `💡 *Sizga aniq o'lcham (razmer) hisoblab berishim uchun taxminiy vazningizni (kg) ham ayta olasizmi?*`
+          : `Ваш рост **${singleHeight} см** — отличный высокий рост! 🔝\n\n` +
+            `Для высоких мужчин рекомендуем:\n` +
+            `• 👕 Рубашки **Oxford Long Sleeve** и кардиганы в размерах **XL–2XL**, чтобы длина рукава была идеальной.\n` +
+            `• 🧥 Бомбер **Lightweight Bomber** подчеркнет линию плеч.\n` +
+            `• 👖 Прямые джинсы **Straight Fit** (33–36) обеспечат правильную посадку по длине.\n\n` +
+            `💡 *Подскажите ваш примерный вес (кг), чтобы я рассчитал точный размер?*`;
+      } else if (singleHeight >= 170) {
+        reply = isUz
+          ? `Sizning bo'yingiz **${singleHeight} sm** — erkaklar uchun eng qulay va standart o'lchamlar mos tushadigan bo'y! 👔\n\n` +
+            `Do'konimizdagi **M, L va XL** o'lchamdagi barcha kiyimlar sizga a'lo darajada to'g'ri keladi.\n\n` +
+            `Sizga aniq razmer (masalan M yoki L, shimlar uchun 31 yoki 32) hisoblab berishim uchun **vazningizni (kg)** ham yozib yubora olasizmi?`
+          : `Ваш рост **${singleHeight} см** — стандартный гармоничный рост! 👔 Напишите ваш примерный вес в кг, и я подберу точные размеры верха и брюк!`;
+      } else {
+        reply = isUz
+          ? `Sizning bo'yingiz **${singleHeight} sm**.\n\n` +
+            `Kichikroq va o'rtacha bo'yda qomatni yanada balandroq va ko'rkam ko'rsatish sirlari:\n` +
+            `• **Klassik chinos shimlari** (290,000 so'm) — oyoqni uzunroq ko'rsatadi.\n` +
+            `• **Trikotaj yoqali polo ko'ylak** (220,000 so'm, S-M) va ixcham bomber kurtka qomatni yig'ib turadi.\n\n` +
+            `Aniq razmer hisoblashim uchun vazningizni ham ayta olasizmi?`
+          : `Ваш рост **${singleHeight} см**. Напишите ваш вес в кг, чтобы я рассчитал точный размер!`;
+      }
+
+    // B. SINGLE WEIGHT (e.g. "vaznim 85 kg", "80 kg")
+    } else if (extractSingleWeight(lowerMsg)) {
+      const w = extractSingleWeight(lowerMsg)!;
+      reply = isUz
+        ? `Vazningiz **${w} kg** ekanligini qabul qildim ⚖️\n\n` +
+          `Ushbu vazn uchun tavsiya qilinadigan o'lcham: **${w < 65 ? "S-M" : w < 78 ? "M-L" : w < 92 ? "L-XL" : "2XL-3XL"}**.\n\n` +
+          `Aniq razmer (yelka, yeng uzunligi va shim uzunligi) to'g'ri tushishi uchun **bo'yingizni (sm)** ham yozib yuboring!`
+        : `Ваш вес **${w} кг**. Подскажите ваш рост (см), чтобы я рассчитал точный размер верха и брюк!`;
+
+    // C. RASM GENERATSIYA / IMAGE GENERATION
+    } else if (
+      lowerMsg.includes("rasm generatsiya") ||
+      lowerMsg.includes("rasm chiz") ||
+      lowerMsg.includes("rasm yarat") ||
+      lowerMsg.includes("rasm chiqar") ||
+      lowerMsg.includes("foto generat") ||
+      lowerMsg.includes("сгенерируй фото") ||
+      lowerMsg.includes("нарисуй") ||
+      lowerMsg.includes("картинк")
+    ) {
+      reply = isUz
+        ? `Men **BUTTON Men's Wear** matnli sun'iy intellekt maslahatchisiman va to'g'ridan-to'g'ri yangi rasm generatsiya qila (chiza) olmayman 🎨\n\n` +
+          `Lekin men sizga do'konimiz katalogidagi **20+ turdagi haqiqiy kiyimlar, poyabzal va to'liq obrazlarning real fotosuratlarini** ko'rsatib, narxi bilan tavsiya qila olaman!\n\n` +
+          `Masalan, quyidagi kiyimlardan birini so'rasangiz, ularning haqiqiy suratini ko'rsataman:\n` +
+          `• 🧥 **Yengil bomber kurtka** (420,000 so'm)\n` +
+          `• 🧶 **Klassik zamokli kardigan** (280,000 so'm)\n` +
+          `• 👖 **Chinos va jinsi shimlar** (290,000 – 320,000 so'm)\n` +
+          `• 👞 **Zamshli loferlar (Loro Piana)** (450,000 so'm)\n` +
+          `• 👔 **Oksford paxta ko'ylaklari** (250,000 so'm)\n\n` +
+          `Qaysi kiyimimiz fotosurati va ko'rinishini ko'rmoqchisiz?`
+        : `Я текстовый AI-стилист **BUTTON Men's Wear** и не создаю картинки напрямую 🎨\n\n` +
+          `Однако я могу показать вам реальные фотографии товаров из нашего каталога (бомберы, кардиганы, джинсы, лоферы, костюмы) с актуальными ценами и наличием в шоурумах Ташкента! О какой вещи рассказать подробнее?`;
+
+    // D. QAYSI AI / QAYSI MODEL / GEMINI / CHATGPT / SUN'IY INTELLEKT
+    } else if (
+      lowerMsg.includes("qaysi ai") ||
+      lowerMsg.includes("qanaqa ai") ||
+      lowerMsg.includes("qaysi model") ||
+      lowerMsg.includes("gemini") ||
+      lowerMsg.includes("chatgpt") ||
+      lowerMsg.includes("qaysi sun'iy") ||
+      lowerMsg.includes("какой ии") ||
+      lowerMsg.includes("какая модель")
+    ) {
+      reply = isUz
+        ? `Do'konimiz tizimiga eng ilg'or **Google Gemini (bepul 1.5-Flash va 2.0-Flash)** generativ sun'iy intellekti to'liq integratsiya qilingan 🤖⚡\n\n` +
+          `U qanday ishlaydi?\n` +
+          `• Tizim Google Gemini bilan bevosita bog'langan bo'lib, har qanday savolga erkin, jonli va insondek tabiiy javob bera oladi.\n` +
+          `• Shuningdek, tizimga **BUTTON Men's Wear** do'konining barcha 20 ta mahsuloti, narxlar, ranglar nazariyasi va Toshkentdagi 3 ta filial ma'lumotlari kiritilgan.\n\n` +
+          `💡 *Agar sizda Google AI Studio'dan olingan bepul API kalit bo'lsa, uni to'g'ridan-to'g'ri shu chatga yuborishingiz mumkin (masalan: \`AIzaSy...\`) yoki \`/admin\` paneliga kiritishingiz mumkin. Shunda AI to'liq cheksiz jonli generativ rejimda ishlaydi!*\n\n` +
+          `Menga kiyimlar, tadbirlar yoki do'konimiz haqida istalgan savolingizni bering, bajonidil javob beraman!`
+        : `В наш магазин интегрирован **Google Gemini (1.5-Flash & 2.0-Flash)** — передовой генеративный ИИ от Google 🤖⚡\n\n` +
+          `Он обучен на каталоге BUTTON Men's Wear, правилах подбора мужского стиля и размерах. Вы можете свободно общаться и задавать любые вопросы!`;
+
+    // E. NIMALAR QILA OLASAN / QOBILIYAT / IMKONIYATLAR / VAZIFANG
+    } else if (
       lowerMsg.includes("nimalar qila olasan") ||
       lowerMsg.includes("nima qila olasan") ||
       lowerMsg.includes("nima qila oladi") ||
@@ -283,7 +433,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `• 📍 **Адреса филиалов и доставка:**\n` +
           `  Филиалы Чиланзар, Юнусабад, Сергели и быстрая доставка по Ташкенту за 1–3 часа.`;
 
-    // B. BAZM / PARTY / VECHER / LOOK TAYYORLAB BER / OBRAZ TUZIB BER
+    // F. BAZM / PARTY / VECHER / LOOK TAYYORLAB BER / OBRAZ TUZIB BER
     } else if (
       lowerMsg.includes("bazm") ||
       lowerMsg.includes("party") ||
@@ -327,7 +477,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `• 💼 **5. Детали:** Комплект кожаного ремня и портмоне (180 000 сум).\n\n` +
           `💡 Все позиции доступны к примерке в наших шоурумах Ташкента или с доставкой за 1–3 часа!`;
 
-    // C. JONLIMISAN / ODAMMISAN / KIM BU / AI MISAN
+    // G. JONLIMISAN / ODAMMISAN / KIM BU / AI MISAN
     } else if (
       lowerMsg.includes("jonlimisan") ||
       lowerMsg.includes("tirikmisan") ||
@@ -347,7 +497,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
         : `Я персональный искусственный интеллект (AI-стилист), созданный специально для магазина **BUTTON Men's Wear** 🤖👔\n\n` +
           `Я помогаю подобрать гардероб, рассчитать размер по росту и весу, а также ответить на любые вопросы о покупках и доставке!`;
 
-    // D. TUG'ILGAN KUN / DO'STLAR YIG'INI
+    // H. TUG'ILGAN KUN / DO'STLAR YIG'INI
     } else if (
       lowerMsg.includes("tug'ilgan kun") ||
       lowerMsg.includes("tugilgan kun") ||
@@ -376,7 +526,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `• 👖 **Низ:** Брюки **Classic Chinos** (290 000 сум) или прямые джинсы (320 000 сум).\n` +
           `• 👞 **Обувь:** Замшевые лоферы (450 000 сум) или белые кожаные кеды (390 000 сум).`;
 
-    // E. TO'Y VA TANTANALAR (Wedding / Formal)
+    // I. TO'Y VA TANTANALAR (Wedding / Formal)
     } else if (
       lowerMsg.includes("to'y") ||
       lowerMsg.includes("toy") ||
@@ -403,7 +553,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `• 👞 **Обувь:** Замшевые лоферы в стиле Loro Piana (450 000 сум).\n` +
           `• 💼 **Аксессуары:** Комплект кожаного ремня и кошелька (180 000 сум).`;
 
-    // F. BIZNES, OFIS, ISH UCHRASHUVI (Word boundary check)
+    // J. BIZNES, OFIS, ISH UCHRASHUVI
     } else if (
       /\b(biznes|ofis|delovoy|muzokara|suhbat|suhbati)\b/i.test(lowerMsg) ||
       lowerMsg.includes("ishga") ||
@@ -424,7 +574,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `• 👖 **Низ:** Брюки **Classic Chinos** (290 000 сум).\n` +
           `• 👞 **Обувь:** Замшевые лоферы (450 000 сум) или белые кеды (390 000 сум).`;
 
-    // G. ROMANTIK UCHRASHUV / KECHKI TAOM
+    // K. ROMANTIK UCHRASHUV / KECHKI TAOM
     } else if (
       lowerMsg.includes("romantik") ||
       lowerMsg.includes("uchrashuv") ||
@@ -449,7 +599,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `• 👖 **Джинсы:** Прямые джинсы **Straight Fit** (320 000 сум).\n` +
           `• 👟 **Обувь:** Белые кожаные кеды (390 000 сум).`;
 
-    // H. KURTKALAR VA USTKI KIYIMLAR
+    // L. KURTKALAR VA USTKI KIYIMLAR
     } else if (
       lowerMsg.includes("kurtka") ||
       lowerMsg.includes("bomber") ||
@@ -476,7 +626,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `3. Утепленный жилет **Puffer Vest** — 350 000 сум (M–2XL)\n\n` +
           `Все модели в наличии во всех 3 филиалах Ташкента!`;
 
-    // I. SHIMLAR VA JINSILAR
+    // M. SHIMLAR VA JINSILAR
     } else if (
       lowerMsg.includes("shim") ||
       lowerMsg.includes("jinsi") ||
@@ -503,7 +653,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `3. Брюки карго **Cargo Jogger** — 270 000 сум (29–34)\n` +
           `4. Шерстяные классические брюки со стрелками — 310 000 сум (30–36).`;
 
-    // J. POYABZALLAR
+    // N. POYABZALLAR
     } else if (
       lowerMsg.includes("poyabzal") ||
       lowerMsg.includes("poyafzal") ||
@@ -531,54 +681,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `2. Белые кожаные кеды Casual — 390 000 сум (40–44)\n` +
           `3. Замшевые ботинки челси — 520 000 сум (40–44).`;
 
-    // K. KO'YLAKLAR, POLO VA FUTBOLKALAR
-    } else if (
-      lowerMsg.includes("ko'ylak") ||
-      lowerMsg.includes("koylak") ||
-      lowerMsg.includes("rubashka") ||
-      lowerMsg.includes("polo") ||
-      lowerMsg.includes("futbolka") ||
-      lowerMsg.includes("рубашк") ||
-      lowerMsg.includes("футболк")
-    ) {
-      reply = isUz
-        ? `👕 **Ko'ylaklar, Polo va Futbolkalar:**\n\n` +
-          `1. 👔 **Oksford uzun yengli paxta ko'ylak** — **250,000 so'm** (S, M, L, XL, 2XL) — oq va moviy ranglarda.\n` +
-          `2. 👕 **Trikotaj yoqali polo ko'ylak** — **220,000 so'm** (M, L, XL, 2XL) — nafis smart-casual bichim.\n` +
-          `3. 👕 **Chiziqli qisqa yengli polo** — **195,000 so'm** (M, L, XL, 2XL).\n` +
-          `4. 👕 **Oversize zich paxtali premium futbolka** — **160,000 so'm** (S, M, L, XL) — zich 100% paxta.`
-        : `👕 **Рубашки, поло и футболки BUTTON:**\n\n` +
-          `1. Рубашка **Oxford Long Sleeve** — 250 000 сум (S–2XL)\n` +
-          `2. Вязаное поло **Polo Collar Knitted** — 220 000 сум (M–2XL)\n` +
-          `3. Поло в полоску — 195 000 сум (M–2XL)\n` +
-          `4. Оверсайз футболка плотный хлопок — 160 000 сум (S–XL).`;
-
-    // L. KUNDALIK / STREETWEAR / SPORTIVKA
-    } else if (
-      lowerMsg.includes("kundalik") ||
-      lowerMsg.includes("streetwear") ||
-      lowerMsg.includes("oddiy") ||
-      lowerMsg.includes("sportivka") ||
-      lowerMsg.includes("sport to'plam") ||
-      lowerMsg.includes("aylanish") ||
-      lowerMsg.includes("dam olish") ||
-      lowerMsg.includes("город") ||
-      lowerMsg.includes("повседневн")
-    ) {
-      reply = isUz
-        ? `🏙️ **Kundalik va Ko'cha Uslubi (Urban Streetwear):**\n\n` +
-          `• 👕 **Futbolka:** **Oversize zich paxtali premium futbolka** (160,000 so'm)\n` +
-          `• 🦺 **Ustki qatlam:** **Izolyatsiyalangan yengsiz jiletka** (350,000 so'm) yoki **Klassik denim jinsi kurtka** (410,000 so'm)\n` +
-          `• 👖 **Shim:** **Kargo jogger shimi** (270,000 so'm) yoki **Klassik to'g'ri bichimli jinsi shim** (320,000 so'm)\n` +
-          `• 👟 **Poyabzal:** **Oq charm kundalik krossovka** (390,000 so'm)\n\n` +
-          `*(Sport va sayohat uchun: **Ikki qismli erkaklar sport to'plami** — 480,000 so'm).*`
-        : `🏙️ **Городской повседневный стиль:**\n\n` +
-          `• Оверсайз футболка (160 000 сум) + жилет Puffer (350 000 сум)\n` +
-          `• Джинсы Straight Fit (320 000 сум) или брюки карго (270 000 сум)\n` +
-          `• Белые кожаные кеды (390 000 сум)\n` +
-          `• Спортивный костюм-двойка — 480 000 сум.`;
-
-    // M. FILIALLAR VA LOKATSIYALAR
+    // O. FILIALLAR VA LOKATSIYALAR
     } else if (
       lowerMsg.includes("filial") ||
       lowerMsg.includes("qayerda") ||
@@ -601,7 +704,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
         : `📍 **Наши филиалы в Ташкенте:**\n\n${branchesList}\n\n` +
           `⏰ **Режим работы:** ${settings.workingHoursRu} (без выходных, ежедневно с 10:00 до 22:00).`;
 
-    // N. ISH VAQTI
+    // P. ISH VAQTI
     } else if (
       lowerMsg.includes("vaqt") ||
       lowerMsg.includes("ish vaqt") ||
@@ -618,7 +721,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
         : `⏰ **График работы BUTTON:**\n\n` +
           `• Ежедневно: **с 10:00 до 22:00** (без выходных).`;
 
-    // O. YETKAZIB BERISH (DOSTAVKA)
+    // Q. YETKAZIB BERISH (DOSTAVKA)
     } else if (
       lowerMsg.includes("yetkaz") ||
       lowerMsg.includes("dostavka") ||
@@ -635,7 +738,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `• 🏎️ **По Ташкенту:** Доставка за **1–3 часа** до двери.\n` +
           `• 📦 **По регионам Узбекистана:** Почтовая доставка за **1–2 рабочих дня**.`;
 
-    // P. TO'LOV VA KARTA
+    // R. TO'LOV VA KARTA
     } else if (
       lowerMsg.includes("to'lov") ||
       lowerMsg.includes("karta") ||
@@ -655,7 +758,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
         : `💳 **Способы оплаты:**\n\n` +
           `• 🔵 **Click**, 🟢 **Payme**, 🟣 **Uzum Bank**, картами Uzcard/Humo/Visa или наличными при получении.`;
 
-    // Q. RAHMAT / ZO'R / GAP YO'Q / TUSHUNDIM
+    // S. RAHMAT / ZO'R / GAP YO'Q / TUSHUNDIM
     } else if (
       lowerMsg.includes("rahmat") ||
       lowerMsg.includes("raxmat") ||
@@ -674,7 +777,7 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
           `Agar boshqa kiyimlar, ranglar kombinatsiyasi yoki o'lcham bo'yicha savollaringiz bo'lsa, istalgan vaqtda yozishingiz mumkin. Shuningdek, filiallarimizga tashrif buyurib, kiyimlarni bemalol kiyib ko'rishingiz mumkin. Xaridingiz barakali bo'lsin!`
         : `Пожалуйста! Всегда рад помочь! 😊👔 Если возникнут еще вопросы по стилю или размерам — обращайтесь в любое время!`;
 
-    // R. SALOM / GREETINGS
+    // T. SALOM / GREETINGS
     } else if (
       /^(salom|assalom|assalomu alaykum|qalaysiz|qalesiz|qalesan|privet|hi|hello|hayrli kun)\b/i.test(lowerMsg)
     ) {
@@ -684,15 +787,14 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
         : `Здравствуйте! Добро пожаловать! Я персональный AI-стилист **BUTTON Men's Wear** 👔\n\n` +
           `Чем могу вам помочь? Могу подобрать стильный образ для любого события, рассчитать ваш размер или рассказать о наличии товаров в шоурумах!`;
 
-    // S. DYNAMIC SYNTHESIS FOR ANY OTHER QUERY (NEVER REPEATS A CANNED MESSAGE!)
+    // U. CONTEXTUAL & INTELLIGENT DYNAMIC FALLBACK
     } else {
-      // Check if user is asking general styling advice or about colors
-      const hasColor = /qora|oq|ko'k|moviy|bej|jigarrang|kulrang|черный|белый|синий/i.test(lowerMsg);
-      const hasStyleWord = /kiyim|stil|look|obraz|kiyinish|tanlash|tavsiya|mos|yarashadi/i.test(lowerMsg);
+      const hasColor = /qora|oq|ko'k|moviy|bej|jigarrang|kulrang|yashil|qizil|черный|белый|синий/i.test(lowerMsg);
+      const hasStyleWord = /kiyim|stil|look|obraz|kiyinish|tanlash|tavsiya|mos|yarashadi|fason|moda/i.test(lowerMsg);
 
       if (hasColor) {
         reply = isUz
-          ? `Ranglar uyg'unligi bo'yicha maslahatim:\n\n` +
+          ? `Ranglar uyg'unligi bo'yicha tavsiyam:\n\n` +
             `• **Qora rangli shimlar:** Oq yoki moviy **Oksford ko'ylak**, qaymoqrang trikotaj kardigan va toza oq **krossovka** yoki qora **zamsh lofer** bilan ajoyib yarashadi.\n` +
             `• **Bej / qaymoqrang chinos:** To'q ko'k polo, qora bomber kurtka va jigarrang zamsh lofer bilan juda boy ko'rinadi.\n` +
             `• **Ko'k jinsi shimlar:** Oq zich futbolka, qora zamokli kardigan va oq krossovka bilan zamonaviy kundalik look beradi.\n\n` +
@@ -712,12 +814,10 @@ Mijoz qaysi tilda yozsa (${isUz ? "o'zbek" : "rus"}), o'sha tilda javob bering. 
             `Какой стиль вам ближе?`;
       } else {
         reply = isUz
-          ? `Savolingiz uchun tashakkur! Men **BUTTON Men's Wear** stilist maslahatchisiman.\n\n` +
-            `Sizga eng to'g'ri maslahat berishim uchun:\n` +
-            `• Qaysi tadbirga (to'y, bazm, tug'ilgan kun, ofis yoki kundalik) kiyim qidiryapsiz?\n` +
-            `• Yoki bo'yingiz va vazningizni aytsangiz (masalan: *"Bo'yim 178 sm, vaznim 75 kg"*), sizga to'liq kiyimlar to'plami va aniq razmerlarni hisoblab beraman!`
-          : `Спасибо за ваш вопрос! Я AI-стилист **BUTTON Men's Wear**.\n\n` +
-            `Подскажите, для какого случая подбираем одежду (вечеринка, свадьба, офис или на каждый день)? Либо напишите ваш рост и вес, и я подберу точный размер!`;
+          ? `Savolingizni tushundim! Men **BUTTON Men's Wear** AI maslahatchisiman.\n\n` +
+            `Sizga erkaklar kiyimlari, ranglar mosligi, o'lcham tanlash (masalan bo'y-vazningizga qarab) yoki do'kondagi 20+ turdagi mahsulotlarimiz (kurtkalar, jinsilar, loferlar, ko'ylaklar) bo'yicha to'liq yordam bera olaman.\n\n` +
+            `Menga aynan qanday kiyim yoki tadbir uchun qidirayotganingizni yozsangiz, darhol mukammal tavsiya beraman!`
+          : `Понял ваш вопрос! Я AI-стилист **BUTTON Men's Wear**. Могу подобрать образ, рассчитать размер по росту и весу или рассказать о наличии одежды в шоурумах. Напишите, что именно вас интересует!`;
       }
     }
 
