@@ -177,7 +177,7 @@ export default function PwaInstallPrompt({
 
   return (
     <>
-      {/* 1. Minimized Floating Quick Install Badge */}
+      {/* 1. Minimized Floating Quick Install Badge (Anchored Bottom-Left to never overlap with Bottom-Right Cart) */}
       {showPrompt && isMinimized && (
         <button
           type="button"
@@ -185,7 +185,7 @@ export default function PwaInstallPrompt({
             setIsMinimized(false);
             triggerInstallFlow();
           }}
-          className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-[9999] px-3.5 py-2 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-bold text-xs shadow-2xl flex items-center gap-2 border border-blue-400/40 animate-scale-in cursor-pointer hover:scale-105 active:scale-95 transition-all"
+          className="fixed bottom-20 md:bottom-8 left-4 sm:left-6 md:left-8 z-40 px-3.5 py-2 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-bold text-xs shadow-2xl flex items-center gap-2 border border-blue-400/40 animate-scale-in cursor-pointer hover:scale-105 active:scale-95 transition-all"
         >
           <div className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-white/40">
             <Image src="/btn-logo.png" alt="BUTTON" fill className="object-cover" unoptimized />
@@ -199,9 +199,9 @@ export default function PwaInstallPrompt({
         </button>
       )}
 
-      {/* 2. Floating Recommendation Banner */}
+      {/* 2. Floating Recommendation Banner (Anchored Bottom-Left to never overlap with Bottom-Right Cart) */}
       {showPrompt && !isMinimized && (
-        <div className="fixed bottom-20 md:bottom-6 left-3 right-3 sm:left-auto sm:right-6 sm:w-[410px] z-[9999] animate-slide-left">
+        <div className="fixed bottom-20 md:bottom-8 left-3 sm:left-6 md:left-8 right-3 sm:right-auto sm:w-[390px] z-40 animate-slide-left">
           <div className="p-3.5 sm:p-4 rounded-3xl bg-slate-900/98 backdrop-blur-xl border border-blue-500/40 text-white shadow-2xl flex items-center justify-between gap-3 ring-1 ring-blue-500/20">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-11 h-11 rounded-2xl overflow-hidden relative shrink-0 border border-blue-400/50 shadow-md bg-black">

@@ -301,6 +301,17 @@ export default function AdminPage() {
     const savedPin = sessionStorage.getItem("button_admin_pin");
     if (savedPin) {
       setPin(savedPin);
+      // Pre-load cached orders instantly
+      const cachedRaw = localStorage.getItem("button_admin_orders_cache");
+      if (cachedRaw) {
+        try {
+          const parsed = JSON.parse(cachedRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setOrders(parsed);
+          }
+        } catch {}
+      }
+
       fetch("/api/settings", {
         headers: { "x-admin-pin": savedPin },
       }).then((res) => {
@@ -334,12 +345,41 @@ export default function AdminPage() {
 
       if (prodData.success) setProducts(prodData.products);
       if (orderData.success) {
-        const currentOrders: Order[] = orderData.orders || [];
-        if (prevOrdersCountRef.current > 0 && currentOrders.length > prevOrdersCountRef.current) {
+        const serverOrders: Order[] = Array.isArray(orderData.orders) ? orderData.orders : [];
+
+        // Resilient order caching: Merge server orders with local storage cache so orders NEVER vanish on refresh or cold start
+        let cachedOrders: Order[] = [];
+        try {
+          const raw = localStorage.getItem("button_admin_orders_cache");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) cachedOrders = parsed;
+          }
+        } catch {}
+
+        const mergedMap = new Map<string, Order>();
+        cachedOrders.forEach((o) => mergedMap.set(o.id, o));
+        serverOrders.forEach((o) => mergedMap.set(o.id, o));
+        const mergedOrders = Array.from(mergedMap.values()).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        if (prevOrdersCountRef.current > 0 && mergedOrders.length > prevOrdersCountRef.current) {
           playNotificationSound();
         }
-        prevOrdersCountRef.current = currentOrders.length;
-        setOrders(currentOrders);
+        prevOrdersCountRef.current = mergedOrders.length;
+        setOrders(mergedOrders);
+        localStorage.setItem("button_admin_orders_cache", JSON.stringify(mergedOrders));
+
+        // Auto-heal: If server was cold-started or missing cached orders, sync back to server via PUT
+        const missingOnServer = mergedOrders.filter((m) => !serverOrders.some((s) => s.id === m.id));
+        if (missingOnServer.length > 0) {
+          fetch("/api/orders", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", "x-admin-pin": currentPin },
+            body: JSON.stringify({ syncOrders: missingOnServer }),
+          }).catch(() => {});
+        }
       }
       if (settData.success && settData.settings) {
         setSettings(settData.settings);
@@ -363,11 +403,38 @@ export default function AdminPage() {
         .then((r) => r.json())
         .then((data) => {
           if (data.success && Array.isArray(data.orders)) {
-            if (data.orders.length > prevOrdersCountRef.current) {
+            const serverOrders: Order[] = data.orders;
+            let cachedOrders: Order[] = [];
+            try {
+              const raw = localStorage.getItem("button_admin_orders_cache");
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) cachedOrders = parsed;
+              }
+            } catch {}
+
+            const mergedMap = new Map<string, Order>();
+            cachedOrders.forEach((o) => mergedMap.set(o.id, o));
+            serverOrders.forEach((o) => mergedMap.set(o.id, o));
+            const mergedOrders = Array.from(mergedMap.values()).sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+
+            if (mergedOrders.length > prevOrdersCountRef.current) {
               playNotificationSound();
             }
-            prevOrdersCountRef.current = data.orders.length;
-            setOrders(data.orders);
+            prevOrdersCountRef.current = mergedOrders.length;
+            setOrders(mergedOrders);
+            localStorage.setItem("button_admin_orders_cache", JSON.stringify(mergedOrders));
+
+            const missingOnServer = mergedOrders.filter((m) => !serverOrders.some((s) => s.id === m.id));
+            if (missingOnServer.length > 0) {
+              fetch("/api/orders", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+                body: JSON.stringify({ syncOrders: missingOnServer }),
+              }).catch(() => {});
+            }
           }
         })
         .catch(() => {});
@@ -726,6 +793,13 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) {
+        setOrders((prev) => {
+          const next = prev.map((o) => (o.id === orderId ? { ...o, status } : o));
+          try {
+            localStorage.setItem("button_admin_orders_cache", JSON.stringify(next));
+          } catch {}
+          return next;
+        });
         loadData(pin);
         setSelectedOrderForView((prev) => (prev && prev.id === orderId ? { ...prev, status } : prev));
       }
@@ -746,6 +820,17 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) {
+        setOrders((prev) => {
+          const next = prev.map((o) =>
+            o.id === orderId
+              ? { ...o, paymentStatus, paymentRejectReason: reason || o.paymentRejectReason }
+              : o
+          );
+          try {
+            localStorage.setItem("button_admin_orders_cache", JSON.stringify(next));
+          } catch {}
+          return next;
+        });
         loadData(pin);
         setSelectedOrderForView((prev) =>
           prev && prev.id === orderId

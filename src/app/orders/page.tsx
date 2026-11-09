@@ -82,17 +82,45 @@ export default function CustomerOrdersPage() {
     setIsLoading(true);
     setHasSearched(true);
     try {
+      // Read existing local cached orders
+      let localOrders: Order[] = [];
+      const savedOrdersRaw = localStorage.getItem("button_customer_orders");
+      if (savedOrdersRaw) {
+        try {
+          const parsed = JSON.parse(savedOrdersRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            localOrders = parsed;
+            setOrders(parsed);
+          }
+        } catch {}
+      }
+
       const res = await fetch(`/api/orders?phone=${encodeURIComponent(phone)}`);
       const data = await res.json();
       if (data.success && Array.isArray(data.orders)) {
-        setOrders(data.orders);
+        const serverOrders: Order[] = data.orders;
+        const orderMap = new Map<string, Order>();
+        localOrders.forEach((o) => orderMap.set(o.id, o));
+        serverOrders.forEach((o) => orderMap.set(o.id, o));
+        const merged = Array.from(orderMap.values()).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setOrders(merged);
+        localStorage.setItem("button_customer_orders", JSON.stringify(merged));
         localStorage.setItem("button_customer_phone", phone);
-      } else {
-        setOrders([]);
+
+        // Auto-heal missing orders to server
+        const missingOnServer = localOrders.filter((lo) => !serverOrders.some((so) => so.id === lo.id));
+        if (missingOnServer.length > 0) {
+          fetch("/api/orders", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ syncOrders: missingOnServer }),
+          }).catch(() => {});
+        }
       }
     } catch (e) {
       console.error(e);
-      setOrders([]);
     } finally {
       setIsLoading(false);
     }

@@ -502,6 +502,10 @@ export async function deleteProduct(id: string): Promise<boolean> {
   return true;
 }
 
+declare global {
+  var __BUTTON_ORDERS__: Order[] | undefined;
+}
+
 // ------------------- ORDERS STORAGE -------------------
 export async function getOrders(): Promise<Order[]> {
   const supabase = getSupabase();
@@ -535,11 +539,17 @@ export async function getOrders(): Promise<Order[]> {
           createdAt: row.created_at,
         }));
         memoryOrders = mapped;
+        globalThis.__BUTTON_ORDERS__ = mapped;
         return mapped;
       }
     } catch (err) {
       console.warn("[storage] Supabase getOrders error:", err);
     }
+  }
+
+  if (globalThis.__BUTTON_ORDERS__ && globalThis.__BUTTON_ORDERS__.length > 0) {
+    memoryOrders = globalThis.__BUTTON_ORDERS__;
+    return memoryOrders;
   }
 
   if (memoryOrders !== null) {
@@ -548,19 +558,27 @@ export async function getOrders(): Promise<Order[]> {
 
   const loaded = safeReadFile<Order[]>(ORDERS_FILE, "orders.json", []);
   memoryOrders = Array.isArray(loaded) ? loaded : [];
+  globalThis.__BUTTON_ORDERS__ = memoryOrders;
   return memoryOrders;
 }
 
 export async function saveOrder(order: Order): Promise<Order> {
   const orders = await getOrders();
-  orders.unshift(order);
+  const existingIdx = orders.findIndex((o) => o.id === order.id);
+  if (existingIdx !== -1) {
+    orders[existingIdx] = { ...orders[existingIdx], ...order };
+  } else {
+    orders.unshift(order);
+  }
+
   memoryOrders = orders;
+  globalThis.__BUTTON_ORDERS__ = orders;
   safeWriteFile(ORDERS_FILE, memoryOrders);
 
   const supabase = getSupabase();
   if (supabase) {
     try {
-      await supabase.from("orders").insert({
+      await supabase.from("orders").upsert({
         id: order.id,
         customer_id: order.customerId,
         customer_name: order.customerName,

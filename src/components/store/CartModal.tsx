@@ -259,6 +259,16 @@ export const CartModal: React.FC<CartModalProps> = ({
           onOrderCreated(data.order);
         }
 
+        // Direct resilient storage backup so orders are immediately preserved
+        if (data.order) {
+          try {
+            const rawOrders = localStorage.getItem("button_customer_orders");
+            const existingOrders: Order[] = rawOrders ? JSON.parse(rawOrders) : [];
+            const nextOrders = [data.order, ...existingOrders.filter((o: Order) => o.id !== data.order.id)];
+            localStorage.setItem("button_customer_orders", JSON.stringify(nextOrders));
+          } catch (e) {}
+        }
+
         // Save customer details in localStorage
         try {
           const existing = localStorage.getItem("button_customer");

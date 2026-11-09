@@ -155,3 +155,32 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
   }
 }
+
+/**
+ * PUT /api/orders
+ * Resilient multi-tier client-server sync endpoint.
+ * Allows client (Customer or Admin) to restore locally cached orders
+ * to serverless instance storage so orders are NEVER lost across restarts.
+ */
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const syncOrders: Order[] = body.syncOrders;
+    if (!Array.isArray(syncOrders) || syncOrders.length === 0) {
+      return NextResponse.json({ success: true, count: 0 });
+    }
+
+    let savedCount = 0;
+    for (const order of syncOrders) {
+      if (order && order.id && order.customerName) {
+        await saveOrder(order);
+        savedCount++;
+      }
+    }
+
+    return NextResponse.json({ success: true, count: savedCount });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
+  }
+}

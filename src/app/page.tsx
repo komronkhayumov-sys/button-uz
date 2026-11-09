@@ -14,7 +14,6 @@ import { OrderModal } from "@/components/store/OrderModal";
 import { WifiModal } from "@/components/store/WifiModal";
 import { PhoneModal } from "@/components/store/PhoneModal";
 import { BranchHub } from "@/components/store/BranchHub";
-import { StoreFooter } from "@/components/layout/StoreFooter";
 import PwaInstallPrompt from "@/components/common/PwaInstallPrompt";
 import OfflineBanner from "@/components/common/OfflineBanner";
 import ToastNotification, { ToastType } from "@/components/common/ToastNotification";
@@ -156,25 +155,51 @@ export default function HomePage() {
       } catch (e) {}
     }
 
-    // Load orders & sync live status from server
-    const savedOrders = localStorage.getItem("button_customer_orders");
-    if (savedOrders) {
+    // Load orders & sync live status from server (Resilient local + server merge)
+    let localCustomerOrders: Order[] = [];
+    const savedOrdersRaw = localStorage.getItem("button_customer_orders");
+    if (savedOrdersRaw) {
       try {
-        setCustomerOrders(JSON.parse(savedOrders));
+        const parsed = JSON.parse(savedOrdersRaw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localCustomerOrders = parsed;
+          setCustomerOrders(parsed);
+        }
       } catch (e) {}
     }
 
     const savedPhone =
       localStorage.getItem("button_customer_phone") ||
-      (savedCustomer ? JSON.parse(savedCustomer).phone : null);
+      (savedCustomer ? (() => { try { return JSON.parse(savedCustomer)?.phone || null; } catch { return null; } })() : null) ||
+      (localCustomerOrders[0]?.customerPhone || null);
 
     if (savedPhone) {
+      try {
+        localStorage.setItem("button_customer_phone", savedPhone);
+      } catch {}
       fetch(`/api/orders?phone=${encodeURIComponent(savedPhone)}`)
         .then((r) => r.json())
         .then((data) => {
           if (data.success && Array.isArray(data.orders)) {
-            setCustomerOrders(data.orders);
-            localStorage.setItem("button_customer_orders", JSON.stringify(data.orders));
+            const serverOrders: Order[] = data.orders;
+            const orderMap = new Map<string, Order>();
+            localCustomerOrders.forEach((o) => orderMap.set(o.id, o));
+            serverOrders.forEach((o) => orderMap.set(o.id, o));
+            const merged = Array.from(orderMap.values()).sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setCustomerOrders(merged);
+            localStorage.setItem("button_customer_orders", JSON.stringify(merged));
+
+            // Auto-heal server storage if cold start lost orders
+            const missingOnServer = localCustomerOrders.filter((lo) => !serverOrders.some((so) => so.id === lo.id));
+            if (missingOnServer.length > 0) {
+              fetch("/api/orders", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ syncOrders: missingOnServer }),
+              }).catch(() => {});
+            }
           }
         })
         .catch(() => {});
@@ -268,6 +293,11 @@ export default function HomePage() {
   };
 
   const handleOrderCreated = (newOrder: Order) => {
+    if (newOrder.customerPhone) {
+      try {
+        localStorage.setItem("button_customer_phone", newOrder.customerPhone);
+      } catch (e) {}
+    }
     setCustomerOrders((prev) => {
       const next = [newOrder, ...prev.filter((o) => o.id !== newOrder.id)];
       try {
@@ -498,23 +528,46 @@ export default function HomePage() {
             onViewCatalog={() => handleViewCatalog()}
             onAddToCart={handleAddToCart}
             onRefresh={() => {
+              let localOrders: Order[] = [];
               const savedOrders = localStorage.getItem("button_customer_orders");
               if (savedOrders) {
                 try {
-                  setCustomerOrders(JSON.parse(savedOrders));
+                  const parsed = JSON.parse(savedOrders);
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    localOrders = parsed;
+                    setCustomerOrders(parsed);
+                  }
                 } catch (e) {}
               }
               const savedCustomer = localStorage.getItem("button_customer");
               const savedPhone =
                 localStorage.getItem("button_customer_phone") ||
-                (savedCustomer ? JSON.parse(savedCustomer).phone : null);
+                (savedCustomer ? (() => { try { return JSON.parse(savedCustomer)?.phone || null; } catch { return null; } })() : null) ||
+                (localOrders[0]?.customerPhone || null);
               if (savedPhone) {
                 fetch(`/api/orders?phone=${encodeURIComponent(savedPhone)}`)
                   .then((r) => r.json())
                   .then((data) => {
                     if (data.success && Array.isArray(data.orders)) {
-                      setCustomerOrders(data.orders);
-                      localStorage.setItem("button_customer_orders", JSON.stringify(data.orders));
+                      const serverOrders: Order[] = data.orders;
+                      const orderMap = new Map<string, Order>();
+                      localOrders.forEach((o) => orderMap.set(o.id, o));
+                      serverOrders.forEach((o) => orderMap.set(o.id, o));
+                      const merged = Array.from(orderMap.values()).sort(
+                        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                      );
+                      setCustomerOrders(merged);
+                      localStorage.setItem("button_customer_orders", JSON.stringify(merged));
+
+                      // Auto-heal missing orders to server
+                      const missingOnServer = localOrders.filter((lo) => !serverOrders.some((so) => so.id === lo.id));
+                      if (missingOnServer.length > 0) {
+                        fetch("/api/orders", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ syncOrders: missingOnServer }),
+                        }).catch(() => {});
+                      }
                     }
                   })
                   .catch(() => {});
@@ -540,9 +593,6 @@ export default function HomePage() {
             onAddToCart={handleAddToCart}
           />
         )}
-
-        {/* Global Store Footer with Branches, Working Hours & Contacts */}
-        <StoreFooter lang={lang} settings={settings} />
       </main>
 
       {/* 3. Persistent Floating Cart Icon (Temu / Alibaba / AliExpress style) */}
