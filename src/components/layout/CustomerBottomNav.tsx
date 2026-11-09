@@ -92,7 +92,8 @@ export const CustomerBottomNav: React.FC<CustomerBottomNavProps> = ({
 
   return (
     <nav
-      aria-label="Mobile Navigation"
+      role="navigation"
+      aria-label={isUz ? "Mobil menyu navigatsiyasi" : "Мобильная навигация"}
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 max-w-[100vw] overflow-x-clip bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-xl border-t border-[#E2E8F0] dark:border-slate-800 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] transition-all duration-300 pb-[max(env(safe-area-inset-bottom),10px)]"
     >
       <div className="grid grid-cols-5 h-16 max-w-md mx-auto px-1">

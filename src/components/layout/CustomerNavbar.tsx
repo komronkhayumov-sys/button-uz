@@ -134,7 +134,10 @@ export const CustomerNavbar: React.FC<CustomerNavbarProps> = ({
         </div>
 
         {/* Center: Desktop Navigation Links (Unified, Perfectly Aligned Horizontal Segment) */}
-        <nav className="hidden md:flex items-center gap-1 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 backdrop-blur-xs">
+        <nav
+          aria-label={isUz ? "Asosiy navigatsiya" : "Основная навигация"}
+          className="hidden md:flex items-center gap-1 p-1 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 backdrop-blur-xs"
+        >
           {/* 1. Katalog */}
           <button
             type="button"

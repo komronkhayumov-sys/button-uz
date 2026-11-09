@@ -293,7 +293,10 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
       </div>
 
       {/* 4.1. Horizontal Category Pills (Barchasi 245, Kostyum 48, etc.) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth">
+      <nav
+        aria-label={isUz ? "Kategoriyalar filtri" : "Фильтр категорий"}
+        className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth"
+      >
         {CATEGORIES.map((cat) => {
           const isSelected = selectedCategory === cat.id;
           const label = isUz ? cat.nameUz : cat.nameRu;
@@ -324,7 +327,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
             </button>
           );
         })}
-      </div>
+      </nav>
 
       {/* 4.2. Advanced Filters Drawer / Bottom Sheet (Kategoriya, Narx, Razmer, Rang, Mavjudlik) */}
       {isFilterSheetOpen && (
@@ -493,7 +496,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
-            {displayedProducts.map((p) => {
+            {displayedProducts.map((p, idx) => {
               const isWishlisted = wishlistIds.includes(p.id);
               const isJustAdded = addedItemAnim === p.id;
               const isAvailable = p.isAvailable !== false;
@@ -512,10 +515,11 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
                       src={p.image}
                       alt={p.name}
                       fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className={`object-cover group-hover:scale-105 transition-transform duration-500 ${
                         !isAvailable ? "grayscale" : ""
                       }`}
-                      unoptimized
+                      priority={idx < 4}
                     />
 
                     {/* Badge top-left */}

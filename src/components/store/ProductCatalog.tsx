@@ -128,7 +128,10 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
       </div>
 
       {/* Horizontal Category Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth">
+      <nav
+        aria-label={isUz ? "Kategoriyalar filtri" : "Фильтр категорий"}
+        className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth"
+      >
         {CATEGORIES.map((cat) => {
           const isSelected = selectedCategory === cat.id;
           const label = isUz ? cat.nameUz : cat.nameRu;
@@ -157,7 +160,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
             </button>
           );
         })}
-      </div>
+      </nav>
 
       {/* Product List Grid (Responsive: 2 on mobile, 3 on tablet, 4 on desktop) */}
       {filteredProducts.length === 0 ? (
@@ -173,7 +176,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
-          {filteredProducts.map((product) => {
+          {filteredProducts.map((product, idx) => {
             const productName = !isUz && product.nameRu ? product.nameRu : product.name;
             const isRecentlyAdded = addedItemAnim === product.id;
 
@@ -191,7 +194,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                     fill
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     className="object-cover group-hover:scale-105 transition-transform duration-700"
-                    unoptimized
+                    priority={idx < 4}
                   />
 
                   {/* Badge top-left */}

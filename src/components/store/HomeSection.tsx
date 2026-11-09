@@ -194,7 +194,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
           {/* Text Info (Exact Instagram Profile Typography & Info) */}
           <div className="flex-1 min-w-0 space-y-0.5">
             <h1 className="font-black text-base sm:text-lg text-[#0F172A] dark:text-white tracking-tight leading-snug truncate">
-              {currentSettings.storeName || "𝗕𝘂𝘁𝘁𝗼𝗻 𝗘𝗿𝗸𝗮𝗸𝗹𝗮𝗿 𝗞𝗶𝘆𝗶𝗺 𝗗𝗼‘𝗸𝗼𝗻𝗶"}
+              {(currentSettings.storeName || "BUTTON Men's Wear").replace(/\s*\(\s*button_uz\s*\)/i, "").trim()}
             </h1>
 
             <a
@@ -403,9 +403,9 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                         src={p.image}
                         alt={p.name}
                         fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        unoptimized
-                        priority={idx < 2}
+                        priority={idx < 4}
                       />
 
                       {/* Top-left Badge (XIT / YANGI) */}

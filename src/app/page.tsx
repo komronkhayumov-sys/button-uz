@@ -14,6 +14,7 @@ import { OrderModal } from "@/components/store/OrderModal";
 import { WifiModal } from "@/components/store/WifiModal";
 import { PhoneModal } from "@/components/store/PhoneModal";
 import { BranchHub } from "@/components/store/BranchHub";
+import { StoreFooter } from "@/components/layout/StoreFooter";
 import PwaInstallPrompt from "@/components/common/PwaInstallPrompt";
 import OfflineBanner from "@/components/common/OfflineBanner";
 import ToastNotification, { ToastType } from "@/components/common/ToastNotification";
@@ -454,14 +455,19 @@ export default function HomePage() {
                   </p>
                 </div>
               </div>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-                getStoreTimeStatus(lang).isOpen
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
-              }`}>
-                <span className={`w-2 h-2 rounded-full ${getStoreTimeStatus(lang).isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
-                <span>{getStoreTimeStatus(lang).isOpen ? (lang === "uz" ? "Hozir ochiq (10:00 – 23:00)" : "Сейчас открыто") : (lang === "uz" ? "Hozir yopiq" : "Сейчас закрыто")}</span>
-              </span>
+              {(() => {
+                const timeStatus = getStoreTimeStatus(lang);
+                return (
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                    timeStatus.isOpen
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                      : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${timeStatus.isOpen ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                    <span>{lang === "uz" ? timeStatus.statusTextUz : timeStatus.statusTextRu}</span>
+                  </span>
+                );
+              })()}
             </div>
 
             <BranchHub lang={lang} branches={settings?.branches} />
@@ -534,6 +540,9 @@ export default function HomePage() {
             onAddToCart={handleAddToCart}
           />
         )}
+
+        {/* Global Store Footer with Branches, Working Hours & Contacts */}
+        <StoreFooter lang={lang} settings={settings} />
       </main>
 
       {/* 3. Persistent Floating Cart Icon (Temu / Alibaba / AliExpress style) */}

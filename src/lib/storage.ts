@@ -3,6 +3,7 @@ import path from "path";
 import os from "os";
 import { Customer, Order, Product, StoreSettings } from "@/types";
 import { DEFAULT_SETTINGS, INITIAL_PRODUCTS } from "@/constants";
+import { getSupabase } from "@/lib/supabase";
 
 // Detect serverless environment (Vercel, AWS Lambda, Netlify, etc.)
 const isServerless = Boolean(
@@ -29,7 +30,6 @@ function getWritableDirectory(): string {
     if (!fs.existsSync(localDir)) {
       fs.mkdirSync(localDir, { recursive: true });
     }
-    // Test write access to avoid EROFS if local directory is read-only
     const testFile = path.join(localDir, `.test_probe_${Date.now()}`);
     fs.writeFileSync(testFile, "ok");
     fs.unlinkSync(testFile);
@@ -84,14 +84,12 @@ function safeReadFile<T>(filePath: string, seedFilename?: string, fallbackValue?
     console.warn(`[storage] Read failed for ${filePath}:`, err);
   }
 
-  // Fallback to bundled seed in process.cwd()/data/
   if (seedFilename) {
     try {
       const seedPath = path.join(SEED_DIR, seedFilename);
       if (fs.existsSync(seedPath)) {
         const raw = fs.readFileSync(seedPath, "utf-8");
         const parsed = JSON.parse(raw);
-        // Attempt to cache in writable path
         safeWriteFile(filePath, parsed);
         return parsed;
       }
@@ -105,6 +103,29 @@ function safeReadFile<T>(filePath: string, seedFilename?: string, fallbackValue?
 
 // ------------------- SETTINGS STORAGE -------------------
 export async function getSettings(): Promise<StoreSettings> {
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("data")
+        .eq("id", "store_settings")
+        .single();
+
+      if (!error && data?.data) {
+        const loaded: StoreSettings = {
+          ...DEFAULT_SETTINGS,
+          adminPin: process.env.ADMIN_PIN || DEFAULT_SETTINGS.adminPin,
+          ...data.data,
+        };
+        memorySettings = loaded;
+        return loaded;
+      }
+    } catch (err) {
+      console.warn("[storage] Supabase getSettings error:", err);
+    }
+  }
+
   if (memorySettings) {
     return memorySettings;
   }
@@ -115,11 +136,12 @@ export async function getSettings(): Promise<StoreSettings> {
   };
 
   const stored = safeReadFile<StoreSettings>(SETTINGS_FILE, "settings.json", initialSettings);
-  memorySettings = {
+  const result: StoreSettings = {
     ...initialSettings,
     ...(stored || {}),
   };
-  return memorySettings;
+  memorySettings = result;
+  return result;
 }
 
 export async function saveSettings(updates: Partial<StoreSettings>): Promise<StoreSettings> {
@@ -129,6 +151,20 @@ export async function saveSettings(updates: Partial<StoreSettings>): Promise<Sto
     ...updates,
   };
   safeWriteFile(SETTINGS_FILE, memorySettings);
+
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      await supabase.from("settings").upsert({
+        id: "store_settings",
+        data: memorySettings,
+        updated_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn("[storage] Supabase saveSettings error:", err);
+    }
+  }
+
   return memorySettings;
 }
 
@@ -139,6 +175,34 @@ export async function verifyPin(pin: string): Promise<boolean> {
 
 // ------------------- CUSTOMERS STORAGE -------------------
 export async function getCustomers(): Promise<Customer[]> {
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("*")
+        .order("registered_at", { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        const mapped: Customer[] = data.map((row) => ({
+          id: row.id,
+          name: row.name,
+          phone: row.phone,
+          address: row.address || "",
+          preferredSize: row.preferred_size || "L",
+          measurements: row.measurements || undefined,
+          ordersCount: Number(row.orders_count) || 0,
+          totalSpent: Number(row.total_spent) || 0,
+          registeredAt: row.registered_at,
+        }));
+        memoryCustomers = mapped;
+        return mapped;
+      }
+    } catch (err) {
+      console.warn("[storage] Supabase getCustomers error:", err);
+    }
+  }
+
   if (memoryCustomers !== null) {
     return memoryCustomers;
   }
@@ -161,6 +225,8 @@ export async function saveCustomer(data: {
     (c) => c.phone.replace(/\s+/g, "") === cleanPhone
   );
 
+  let targetCustomer: Customer;
+
   if (existingIdx !== -1) {
     customers[existingIdx] = {
       ...customers[existingIdx],
@@ -168,26 +234,43 @@ export async function saveCustomer(data: {
       address: data.address || customers[existingIdx].address,
       preferredSize: data.preferredSize || customers[existingIdx].preferredSize,
     };
-    memoryCustomers = customers;
-    safeWriteFile(CUSTOMERS_FILE, memoryCustomers);
-    return customers[existingIdx];
+    targetCustomer = customers[existingIdx];
+  } else {
+    targetCustomer = {
+      id: `cust-${Date.now().toString(36)}`,
+      name: data.name,
+      phone: data.phone,
+      address: data.address || "",
+      preferredSize: data.preferredSize || "L",
+      ordersCount: 0,
+      totalSpent: 0,
+      registeredAt: new Date().toISOString(),
+    };
+    customers.unshift(targetCustomer);
   }
 
-  const newCustomer: Customer = {
-    id: `cust-${Date.now().toString(36)}`,
-    name: data.name,
-    phone: data.phone,
-    address: data.address || "",
-    preferredSize: data.preferredSize || "L",
-    ordersCount: 0,
-    totalSpent: 0,
-    registeredAt: new Date().toISOString(),
-  };
-
-  customers.unshift(newCustomer);
   memoryCustomers = customers;
   safeWriteFile(CUSTOMERS_FILE, memoryCustomers);
-  return newCustomer;
+
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      await supabase.from("customers").upsert({
+        id: targetCustomer.id,
+        name: targetCustomer.name,
+        phone: targetCustomer.phone,
+        address: targetCustomer.address || "",
+        preferred_size: targetCustomer.preferredSize || "L",
+        orders_count: targetCustomer.ordersCount,
+        total_spent: targetCustomer.totalSpent,
+        registered_at: targetCustomer.registeredAt,
+      });
+    } catch (err) {
+      console.warn("[storage] Supabase saveCustomer error:", err);
+    }
+  }
+
+  return targetCustomer;
 }
 
 export async function recordCustomerOrder(phone: string, name: string, amount: number, address?: string) {
@@ -195,12 +278,14 @@ export async function recordCustomerOrder(phone: string, name: string, amount: n
   const cleanPhone = phone.replace(/\s+/g, "");
   const existing = customers.find((c) => c.phone.replace(/\s+/g, "") === cleanPhone);
 
+  let targetCustomer: Customer;
   if (existing) {
     existing.ordersCount = (existing.ordersCount || 0) + 1;
     existing.totalSpent = (existing.totalSpent || 0) + amount;
     if (address && !existing.address) existing.address = address;
+    targetCustomer = existing;
   } else {
-    const newCust: Customer = {
+    targetCustomer = {
       id: `cust-${Date.now().toString(36)}`,
       name,
       phone,
@@ -210,11 +295,29 @@ export async function recordCustomerOrder(phone: string, name: string, amount: n
       totalSpent: amount,
       registeredAt: new Date().toISOString(),
     };
-    customers.unshift(newCust);
+    customers.unshift(targetCustomer);
   }
 
   memoryCustomers = customers;
   safeWriteFile(CUSTOMERS_FILE, memoryCustomers);
+
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      await supabase.from("customers").upsert({
+        id: targetCustomer.id,
+        name: targetCustomer.name,
+        phone: targetCustomer.phone,
+        address: targetCustomer.address || "",
+        preferred_size: targetCustomer.preferredSize || "L",
+        orders_count: targetCustomer.ordersCount,
+        total_spent: targetCustomer.totalSpent,
+        registered_at: targetCustomer.registeredAt,
+      });
+    } catch (err) {
+      console.warn("[storage] Supabase recordCustomerOrder error:", err);
+    }
+  }
 }
 
 export async function updateCustomer(id: string, updates: Partial<Customer>): Promise<Customer | null> {
@@ -224,17 +327,93 @@ export async function updateCustomer(id: string, updates: Partial<Customer>): Pr
   customers[idx] = { ...customers[idx], ...updates };
   memoryCustomers = customers;
   safeWriteFile(CUSTOMERS_FILE, memoryCustomers);
+
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      await supabase.from("customers").update({
+        name: customers[idx].name,
+        address: customers[idx].address,
+        preferred_size: customers[idx].preferredSize,
+        measurements: customers[idx].measurements || {},
+      }).eq("id", id);
+    } catch (err) {
+      console.warn("[storage] Supabase updateCustomer error:", err);
+    }
+  }
+
   return customers[idx];
 }
 
 // ------------------- PRODUCTS STORAGE -------------------
 export async function getProducts(): Promise<Product[]> {
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const mapped: Product[] = data.map((row) => ({
+          id: row.id,
+          name: row.name,
+          nameRu: row.name_ru || row.name,
+          description: row.description || "",
+          descriptionRu: row.description_ru || row.description || "",
+          price: Number(row.price) || 0,
+          oldPrice: row.old_price ? Number(row.old_price) : undefined,
+          category: row.category || "suits",
+          image: row.image,
+          images: Array.isArray(row.images) ? row.images : undefined,
+          sizes: Array.isArray(row.sizes) ? row.sizes : ["M", "L", "XL"],
+          colors: Array.isArray(row.colors) ? row.colors : undefined,
+          isAvailable: row.is_available ?? true,
+          isFeatured: row.is_featured ?? false,
+          badge: row.badge || undefined,
+          createdAt: row.created_at,
+        }));
+        memoryProducts = mapped;
+        return mapped;
+      }
+
+      // If Supabase products table is completely empty, auto-seed with INITIAL_PRODUCTS
+      if (!error && Array.isArray(data) && data.length === 0) {
+        console.log("[storage] Supabase products empty, auto-seeding with INITIAL_PRODUCTS...");
+        const seedRows = INITIAL_PRODUCTS.map((p) => ({
+          id: p.id,
+          name: p.name,
+          name_ru: p.nameRu,
+          description: p.description,
+          description_ru: p.descriptionRu,
+          price: p.price,
+          old_price: p.oldPrice,
+          category: p.category,
+          image: p.image,
+          images: p.images || [],
+          sizes: p.sizes,
+          colors: p.colors || [],
+          is_available: p.isAvailable,
+          is_featured: p.isFeatured,
+          badge: p.badge,
+          created_at: p.createdAt || new Date().toISOString(),
+        }));
+        await supabase.from("products").insert(seedRows);
+        memoryProducts = INITIAL_PRODUCTS;
+        return INITIAL_PRODUCTS;
+      }
+    } catch (err) {
+      console.warn("[storage] Supabase getProducts error, falling back to local:", err);
+    }
+  }
+
   if (memoryProducts !== null) {
     return memoryProducts;
   }
 
-  const loaded = safeReadFile<Product[]>(PRODUCTS_FILE, "products.json", []);
-  memoryProducts = Array.isArray(loaded) ? loaded : [];
+  const loaded = safeReadFile<Product[]>(PRODUCTS_FILE, "products.json", INITIAL_PRODUCTS);
+  memoryProducts = Array.isArray(loaded) ? loaded : INITIAL_PRODUCTS;
   return memoryProducts;
 }
 
@@ -245,57 +424,62 @@ export async function getProductById(id: string): Promise<Product | null> {
 
 export async function saveProduct(productData: Partial<Product> & { name: string; price: number }): Promise<Product> {
   const products = await getProducts();
-  let savedProduct: Product;
+  const id = productData.id || `btn-${Date.now().toString(36)}`;
 
-  if (productData.id) {
-    const index = products.findIndex((p) => p.id === productData.id);
-    if (index !== -1) {
-      savedProduct = {
-        ...products[index],
-        ...productData,
-      } as Product;
-      products[index] = savedProduct;
-    } else {
-      savedProduct = {
-        id: productData.id,
-        name: productData.name,
-        nameRu: productData.nameRu || productData.name,
-        description: productData.description || "",
-        descriptionRu: productData.descriptionRu || productData.description || "",
-        price: Number(productData.price) || 0,
-        oldPrice: productData.oldPrice ? Number(productData.oldPrice) : undefined,
-        category: productData.category || "suits",
-        image: productData.image || "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80",
-        sizes: productData.sizes && productData.sizes.length > 0 ? productData.sizes : ["M", "L", "XL"],
-        isAvailable: productData.isAvailable ?? true,
-        isFeatured: productData.isFeatured ?? false,
-        badge: productData.badge,
-        createdAt: productData.createdAt || new Date().toISOString(),
-      };
-      products.unshift(savedProduct);
-    }
+  const savedProduct: Product = {
+    id,
+    name: productData.name,
+    nameRu: productData.nameRu || productData.name,
+    description: productData.description || "",
+    descriptionRu: productData.descriptionRu || productData.description || "",
+    price: Number(productData.price) || 0,
+    oldPrice: productData.oldPrice ? Number(productData.oldPrice) : undefined,
+    category: productData.category || "suits",
+    image: productData.image || "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80",
+    sizes: productData.sizes && productData.sizes.length > 0 ? productData.sizes : ["M", "L", "XL"],
+    colors: productData.colors || [],
+    isAvailable: productData.isAvailable ?? true,
+    isFeatured: productData.isFeatured ?? false,
+    badge: productData.badge,
+    createdAt: productData.createdAt || new Date().toISOString(),
+  };
+
+  const index = products.findIndex((p) => p.id === id);
+  if (index !== -1) {
+    products[index] = savedProduct;
   } else {
-    savedProduct = {
-      id: `btn-${Date.now().toString(36)}`,
-      name: productData.name,
-      nameRu: productData.nameRu || productData.name,
-      description: productData.description || "",
-      descriptionRu: productData.descriptionRu || productData.description || "",
-      price: Number(productData.price) || 0,
-      oldPrice: productData.oldPrice ? Number(productData.oldPrice) : undefined,
-      category: productData.category || "suits",
-      image: productData.image || "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80",
-      sizes: productData.sizes && productData.sizes.length > 0 ? productData.sizes : ["M", "L", "XL"],
-      isAvailable: productData.isAvailable ?? true,
-      isFeatured: productData.isFeatured ?? false,
-      badge: productData.badge,
-      createdAt: new Date().toISOString(),
-    };
     products.unshift(savedProduct);
   }
 
   memoryProducts = products;
   safeWriteFile(PRODUCTS_FILE, memoryProducts);
+
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      await supabase.from("products").upsert({
+        id: savedProduct.id,
+        name: savedProduct.name,
+        name_ru: savedProduct.nameRu,
+        description: savedProduct.description,
+        description_ru: savedProduct.descriptionRu,
+        price: savedProduct.price,
+        old_price: savedProduct.oldPrice,
+        category: savedProduct.category,
+        image: savedProduct.image,
+        images: savedProduct.images || [],
+        sizes: savedProduct.sizes,
+        colors: savedProduct.colors || [],
+        is_available: savedProduct.isAvailable,
+        is_featured: savedProduct.isFeatured,
+        badge: savedProduct.badge,
+        created_at: savedProduct.createdAt,
+      });
+    } catch (err) {
+      console.warn("[storage] Supabase saveProduct error:", err);
+    }
+  }
+
   return savedProduct;
 }
 
@@ -305,11 +489,59 @@ export async function deleteProduct(id: string): Promise<boolean> {
   if (filtered.length === products.length) return false;
   memoryProducts = filtered;
   safeWriteFile(PRODUCTS_FILE, memoryProducts);
+
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      await supabase.from("products").delete().eq("id", id);
+    } catch (err) {
+      console.warn("[storage] Supabase deleteProduct error:", err);
+    }
+  }
+
   return true;
 }
 
 // ------------------- ORDERS STORAGE -------------------
 export async function getOrders(): Promise<Order[]> {
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        const mapped: Order[] = data.map((row) => ({
+          id: row.id,
+          customerId: row.customer_id,
+          customerName: row.customer_name,
+          customerPhone: row.customer_phone,
+          deliveryType: row.delivery_type,
+          branchId: row.branch_id,
+          branchName: row.branch_name,
+          address: row.address,
+          comment: row.comment,
+          paymentMethod: row.payment_method,
+          paymentStatus: row.payment_status,
+          paymentReceipt: row.payment_receipt,
+          paymentReceiptTime: row.payment_receipt_time,
+          paymentRejectReason: row.payment_reject_reason,
+          items: Array.isArray(row.items) ? row.items : [],
+          totalAmount: Number(row.total_amount) || 0,
+          status: row.status,
+          telegramSent: row.telegram_sent ?? false,
+          createdAt: row.created_at,
+        }));
+        memoryOrders = mapped;
+        return mapped;
+      }
+    } catch (err) {
+      console.warn("[storage] Supabase getOrders error:", err);
+    }
+  }
+
   if (memoryOrders !== null) {
     return memoryOrders;
   }
@@ -324,6 +556,35 @@ export async function saveOrder(order: Order): Promise<Order> {
   orders.unshift(order);
   memoryOrders = orders;
   safeWriteFile(ORDERS_FILE, memoryOrders);
+
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      await supabase.from("orders").insert({
+        id: order.id,
+        customer_id: order.customerId,
+        customer_name: order.customerName,
+        customer_phone: order.customerPhone,
+        delivery_type: order.deliveryType,
+        branch_id: order.branchId,
+        branch_name: order.branchName,
+        address: order.address,
+        comment: order.comment,
+        payment_method: order.paymentMethod,
+        payment_status: order.paymentStatus,
+        payment_receipt: order.paymentReceipt,
+        payment_receipt_time: order.paymentReceiptTime,
+        payment_reject_reason: order.paymentRejectReason,
+        items: order.items,
+        total_amount: order.totalAmount,
+        status: order.status,
+        telegram_sent: order.telegramSent ?? false,
+        created_at: order.createdAt,
+      });
+    } catch (err) {
+      console.warn("[storage] Supabase saveOrder error:", err);
+    }
+  }
 
   // Record into customer database safely
   try {
@@ -343,33 +604,49 @@ export async function saveOrder(order: Order): Promise<Order> {
 export async function updateOrder(id: string, updates: Partial<Order>): Promise<Order | null> {
   const orders = await getOrders();
   const index = orders.findIndex((o) => o.id === id);
+  let updatedOrder: Order;
   if (index !== -1) {
     orders[index] = { ...orders[index], ...updates };
-    memoryOrders = orders;
-    safeWriteFile(ORDERS_FILE, memoryOrders);
-    return orders[index];
+    updatedOrder = orders[index];
+  } else {
+    // Resilient fallback for serverless container isolation:
+    updatedOrder = {
+      id,
+      customerName: "Mijoz",
+      customerPhone: "",
+      deliveryType: "delivery",
+      paymentMethod: "click",
+      paymentStatus: (updates.paymentStatus as any) || "verifying",
+      items: [],
+      totalAmount: 0,
+      status: "new",
+      createdAt: new Date().toISOString(),
+      ...updates,
+    };
+    orders.unshift(updatedOrder);
   }
 
-  // Resilient fallback for serverless container isolation:
-  // If the order was created in another serverless container,
-  // save the order stub with this id and updates so the receipt is never lost!
-  const orderStub: Order = {
-    id,
-    customerName: "Mijoz",
-    customerPhone: "",
-    deliveryType: "delivery",
-    paymentMethod: "click",
-    paymentStatus: (updates.paymentStatus as any) || "verifying",
-    items: [],
-    totalAmount: 0,
-    status: "new",
-    createdAt: new Date().toISOString(),
-    ...updates,
-  };
-  orders.unshift(orderStub);
   memoryOrders = orders;
   safeWriteFile(ORDERS_FILE, memoryOrders);
-  return orderStub;
+
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      const dbUpdates: Record<string, any> = {};
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.paymentStatus !== undefined) dbUpdates.payment_status = updates.paymentStatus;
+      if (updates.paymentReceipt !== undefined) dbUpdates.payment_receipt = updates.paymentReceipt;
+      if (updates.paymentReceiptTime !== undefined) dbUpdates.payment_receipt_time = updates.paymentReceiptTime;
+      if (updates.paymentRejectReason !== undefined) dbUpdates.payment_reject_reason = updates.paymentRejectReason;
+      if (updates.telegramSent !== undefined) dbUpdates.telegram_sent = updates.telegramSent;
+
+      await supabase.from("orders").update(dbUpdates).eq("id", id);
+    } catch (err) {
+      console.warn("[storage] Supabase updateOrder error:", err);
+    }
+  }
+
+  return updatedOrder;
 }
 
 export async function updateOrderStatus(id: string, status: Order["status"]): Promise<Order | null> {
