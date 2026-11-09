@@ -153,19 +153,26 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
   // Match products mentioned in AI response
   const detectRecommendedProducts = (text: string): Product[] => {
     const lower = text.toLowerCase();
-    return products.filter((p) => {
-      const pName = p.name.toLowerCase();
-      if (lower.includes(pName)) return true;
-      if (pName.includes("cardigan") && lower.includes("kardigan")) return true;
-      if (pName.includes("bomber") && lower.includes("bomber")) return true;
-      if (pName.includes("jeans") && (lower.includes("jinsi") || lower.includes("джинс"))) return true;
-      if (pName.includes("loafers") && (lower.includes("lofer") || lower.includes("лофер"))) return true;
-      if (pName.includes("sneakers") && (lower.includes("krossovka") || lower.includes("кед"))) return true;
-      if (pName.includes("t-shirt") && (lower.includes("futbolka") || lower.includes("футболк"))) return true;
-      if (pName.includes("vest") && (lower.includes("jiletka") || lower.includes("жилет"))) return true;
-      if (pName.includes("chelsea") && (lower.includes("chelsea") || lower.includes("челси"))) return true;
-      return false;
-    }).slice(0, 3);
+    return products
+      .filter((p) => {
+        const pName = p.name.toLowerCase();
+        const pNameRu = (p.nameRu || "").toLowerCase();
+        if (lower.includes(pName) || (pNameRu && lower.includes(pNameRu))) return true;
+        if ((pName.includes("kardigan") || pName.includes("cardigan")) && (lower.includes("kardigan") || lower.includes("кардиган"))) return true;
+        if (pName.includes("bomber") && (lower.includes("bomber") || lower.includes("бомбер"))) return true;
+        if ((pName.includes("jinsi") || pName.includes("jeans")) && (lower.includes("jinsi") || lower.includes("джинс"))) return true;
+        if ((pName.includes("chinos") || pName.includes("chino")) && (lower.includes("chino") || lower.includes("чинос"))) return true;
+        if ((pName.includes("lofer") || pName.includes("loafers")) && (lower.includes("lofer") || lower.includes("лофер"))) return true;
+        if ((pName.includes("krossovka") || pName.includes("sneakers")) && (lower.includes("krossovka") || lower.includes("кед"))) return true;
+        if ((pName.includes("futbolka") || pName.includes("t-shirt")) && (lower.includes("futbolka") || lower.includes("футболк"))) return true;
+        if ((pName.includes("jiletka") || pName.includes("vest")) && (lower.includes("jiletka") || lower.includes("жилет"))) return true;
+        if ((pName.includes("chelsi") || pName.includes("chelsea")) && (lower.includes("chelsi") || lower.includes("челси"))) return true;
+        if ((pName.includes("oksford") || pName.includes("oxford")) && (lower.includes("oksford") || lower.includes("oxford") || lower.includes("оксфорд"))) return true;
+        if (pName.includes("polo") && (lower.includes("polo") || lower.includes("поло"))) return true;
+        if ((pName.includes("sport") || pName.includes("to'plam")) && (lower.includes("sport to'plam") || lower.includes("спортивн"))) return true;
+        return false;
+      })
+      .slice(0, 3);
   };
 
   const handleSendMessage = async (customText?: string) => {
