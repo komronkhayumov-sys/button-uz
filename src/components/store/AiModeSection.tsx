@@ -184,12 +184,21 @@ export const AiModeSection: React.FC<AiModeSectionProps> = ({
     setIsBotTyping(true);
 
     try {
+      const historyPayload = chatMessages
+        .filter((m) => m.id !== "msg-init")
+        .slice(-8)
+        .map((m) => ({
+          sender: m.sender,
+          text: m.text,
+        }));
+
       const res = await fetch("/api/ai-assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "chat",
           message: textToSend,
+          history: historyPayload,
           lang,
         }),
       });

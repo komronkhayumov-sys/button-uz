@@ -606,6 +606,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   ],
   "telegramBotToken": "9177942848:AAH0ipLIRHVJTv6swun6d6_wvJoM_Fr1WL0",
   "telegramChatId": "-5308553299",
+  "geminiApiKey": "",
   "deliveryPriceTashkent": 30000,
   "deliveryFreeThresholdTashkent": 500000,
   "deliveryPriceRegions": 40000,

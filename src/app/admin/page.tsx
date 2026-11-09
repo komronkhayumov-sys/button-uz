@@ -4329,6 +4329,49 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* Group 5: Google Gemini AI (Haqiqiy Jonli Sun'iy Intellekt) */}
+              <div className={`p-4 sm:p-5 rounded-2xl ${itemCardBg} border space-y-3`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-purple-900/10 dark:border-slate-800">
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-violet-500 animate-spin" style={{ animationDuration: "6s" }} />
+                    <span>{lang === "ru" ? "Google Gemini AI (Реальный искусственный интеллект)" : "Google Gemini AI (Haqiqiy Jonli Sun'iy Intellekt)"}</span>
+                  </h3>
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    <span>{lang === "ru" ? "Получить бесплатный ключ (Google AI Studio) ↗" : "Bepul API kalit olish (Google AI Studio) ↗"}</span>
+                  </a>
+                </div>
+
+                <p className={`text-[11px] ${subTextClass} leading-relaxed`}>
+                  {lang === "ru"
+                    ? "Вставьте сюда ваш ключ API из Google AI Studio. После сохранения AI-стилист на сайте мгновенно переключится на полноценную живую модель Gemini и сможет свободно общаться на узбекском и русском языках."
+                    : "Google AI Studio'dan olingan API kalitini shu yerga kiriting. Saqlaganingizdan so'ng, saytdagi AI maslahatchi darhol haqiqiy jonli Gemini sun'iy intellektiga ulanadi va mijozlar bilan erkin, jonli suhbatlasha oladi."}
+                </p>
+
+                <div>
+                  <label className={`block text-[11px] font-bold mb-1 ${subTextClass}`}>
+                    {lang === "ru" ? "Ключ Google Gemini API (GEMINI_API_KEY):" : "Google Gemini API Kaliti (GEMINI_API_KEY):"}
+                  </label>
+                  <input
+                    type="password"
+                    value={profileForm.geminiApiKey || ""}
+                    onChange={(e) => setProfileForm({ ...profileForm, geminiApiKey: e.target.value.trim() })}
+                    placeholder="AIzaSy..."
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-mono focus:outline-none ${inputBgClass}`}
+                  />
+                  {profileForm.geminiApiKey && profileForm.geminiApiKey.startsWith("AIzaSy") && (
+                    <p className="text-[11px] text-emerald-500 font-bold mt-1 flex items-center gap-1">
+                      <span>✓</span>
+                      <span>{lang === "ru" ? "API ключ введен корректно" : "API kalit to'g'ri kiritilgan"}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {/* Submit all profile changes */}
               <button
                 type="submit"

@@ -153,6 +153,7 @@ export type StoreSettings = {
   card2Enabled?: boolean;
   telegramBotToken?: string;
   telegramChatId?: string;
+  geminiApiKey?: string;
   branches: Branch[];
   // Delivery & Tariffs (Adjustable by Admin)
   deliveryPriceTashkent?: number;
