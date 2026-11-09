@@ -21,5 +21,21 @@
       "purpose": "any maskable"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "Admin Panel",
+      "short_name": "Admin",
+      "description": "Do'kon buyurtmalarini boshqarish",
+      "url": "/admin",
+      "icons": [{ "src": "/btn-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Katalog",
+      "short_name": "Katalog",
+      "description": "Kiyimlar katalogi",
+      "url": "/",
+      "icons": [{ "src": "/btn-logo.png", "sizes": "192x192" }]
+    }
+  ],
   "categories": ["shopping", "lifestyle"]
 }

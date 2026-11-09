@@ -998,13 +998,27 @@ export default function AdminPage() {
             </button>
           </div>
 
-          <div className="text-center pt-2">
-            <Link href="/" className="text-xs text-purple-400 hover:underline flex items-center justify-center gap-1">
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>{lang === "ru" ? "Вернуться на сайт магазина" : "Do'kon sahifasiga qaytish"}</span>
-            </Link>
+          <div className="pt-2 space-y-2">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-pwa-install"))}
+              className="w-full py-2.5 px-3 rounded-2xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-400 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shadow-sm"
+            >
+              <Smartphone className="w-4 h-4 text-blue-400" />
+              <span>{lang === "ru" ? "Установить Admin App" : "Admin ilovasini o'rnatish"}</span>
+            </button>
+
+            <div className="text-center">
+              <Link href="/" className="text-xs text-purple-400 hover:underline inline-flex items-center justify-center gap-1">
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>{lang === "ru" ? "Вернуться на сайт магазина" : "Do'kon sahifasiga qaytish"}</span>
+              </Link>
+            </div>
           </div>
         </div>
+
+        {/* PWA Admin Install Prompt on Login Screen */}
+        <PwaInstallPrompt lang={lang} target="admin" />
       </div>
     );
   }
@@ -1067,7 +1081,10 @@ export default function AdminPage() {
             {/* PWA Admin App Install Button */}
             <button
               type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent("open-pwa-install"))}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                window.dispatchEvent(new CustomEvent("open-pwa-install"));
+              }}
               className="p-2 rounded-xl border cursor-pointer bg-blue-500/15 text-blue-500 border-blue-500/30 hover:bg-blue-500/25 transition-all shadow-xs"
               title={lang === "ru" ? "Установить Admin App" : "Admin ilovasini o'rnatish"}
             >
@@ -1535,7 +1552,10 @@ export default function AdminPage() {
           {/* Admin App Install Recommendation Card */}
           <button
             type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent("open-pwa-install"))}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              window.dispatchEvent(new CustomEvent("open-pwa-install"));
+            }}
             className="w-full p-2.5 rounded-2xl bg-gradient-to-r from-blue-600/15 via-indigo-600/15 to-purple-600/15 border border-blue-500/30 text-blue-400 hover:text-white hover:bg-blue-600/25 transition-all text-left flex items-center justify-between gap-2 cursor-pointer shadow-sm group"
           >
             <div className="flex items-center gap-2.5 min-w-0">
