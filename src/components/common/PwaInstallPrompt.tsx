@@ -60,8 +60,8 @@ export default function PwaInstallPrompt({
     // 1. Check if already running in standalone PWA mode
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
-      document.referrer.includes("android-app://");
+      window.matchMedia("(display-mode: fullscreen)").matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
 
     if (standalone) {
       setIsStandaloneApp(true);
@@ -125,10 +125,10 @@ export default function PwaInstallPrompt({
 
     window.addEventListener("open-pwa-install", handleGlobalTrigger);
 
-    // 6. Show initial recommendation banner if not in standalone
+    // 6. Show initial recommendation banner if not in standalone (fast 400ms response)
     const timer = setTimeout(() => {
       setShowPrompt(true);
-    }, 2000);
+    }, 400);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
@@ -178,7 +178,7 @@ export default function PwaInstallPrompt({
 
   return (
     <>
-      {/* 1. Minimized Floating Quick Install Badge (Anchored Bottom-Left to never overlap with Bottom-Right Cart) */}
+      {/* 1. Minimized Floating Quick Install Badge */}
       {showPrompt && isMinimized && (
         <button
           type="button"
@@ -186,7 +186,7 @@ export default function PwaInstallPrompt({
             setIsMinimized(false);
             triggerInstallFlow();
           }}
-          className="fixed bottom-20 md:bottom-8 left-4 sm:left-6 md:left-8 z-40 px-3.5 py-2 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-bold text-xs shadow-2xl flex items-center gap-2 border border-blue-400/40 animate-scale-in cursor-pointer hover:scale-105 active:scale-95 transition-all"
+          className="fixed top-3 left-3 md:top-auto md:bottom-8 md:left-8 z-50 px-3.5 py-2 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-bold text-xs shadow-2xl flex items-center gap-2 border border-blue-400/40 animate-scale-in cursor-pointer hover:scale-105 active:scale-95 transition-all"
         >
           <div className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-white/40">
             <Image src="/btn-logo.png" alt="BUTTON" fill className="object-cover" unoptimized />
@@ -200,9 +200,9 @@ export default function PwaInstallPrompt({
         </button>
       )}
 
-      {/* 2. Floating Recommendation Banner (Anchored Bottom-Left to never overlap with Bottom-Right Cart) */}
+      {/* 2. Floating Recommendation Banner (Top on mobile so it never collides with bottom nav/cart; bottom-left on desktop) */}
       {showPrompt && !isMinimized && (
-        <div className="fixed bottom-20 md:bottom-8 left-3 sm:left-6 md:left-8 right-3 sm:right-auto sm:w-[390px] z-40 animate-slide-left">
+        <div className="fixed top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-[390px] md:top-auto md:bottom-8 md:left-8 z-50 animate-fade-in">
           <div className="p-3.5 sm:p-4 rounded-3xl bg-slate-900/98 backdrop-blur-xl border border-blue-500/40 text-white shadow-2xl flex items-center justify-between gap-3 ring-1 ring-blue-500/20">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-11 h-11 rounded-2xl overflow-hidden relative shrink-0 border border-blue-400/50 shadow-md bg-black">

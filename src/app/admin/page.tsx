@@ -3158,12 +3158,16 @@ export default function AdminPage() {
 
                 <button
                   type="button"
-                  onClick={() => setIsAiReportModalOpen(true)}
-                  className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-zinc-950 font-black text-xs uppercase tracking-wider transition-all shadow-xl shadow-amber-400/30 hover:shadow-amber-400/60 hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                  disabled
+                  className="px-6 py-3.5 rounded-2xl bg-zinc-800/90 border border-zinc-700/80 text-zinc-400 font-bold text-xs uppercase tracking-wider cursor-not-allowed opacity-75 shrink-0 select-none shadow-none"
+                  title={lang === "ru" ? "Временно недоступно" : "Hozircha bu taklif mavjud emas"}
                 >
                   <span className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 fill-zinc-950" />
-                    <span>Faollashtirish & Ko'rish ($100)</span>
+                    <Sparkles className="w-4 h-4 text-zinc-500" />
+                    <span>{lang === "ru" ? "Активировать & Просмотр ($100)" : "Faollashtirish & Ko'rish ($100)"}</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-md bg-zinc-700/90 text-zinc-300 normal-case font-medium border border-zinc-600/50">
+                      {lang === "ru" ? "недоступно" : "hozircha mavjud emas"}
+                    </span>
                   </span>
                 </button>
               </div>
